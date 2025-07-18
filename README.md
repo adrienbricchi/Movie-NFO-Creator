@@ -1,1 +1,1 @@
-# Kodi NFO Creator
+# Movie NFO Creator
