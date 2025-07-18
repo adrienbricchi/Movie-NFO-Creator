@@ -20,14 +20,40 @@
 import configparser
 import requests
 import glob
+import time
+import csv
 import os
 import re
 import xml.etree.ElementTree as ET
 
 
-LIMIT = 3
 TMDB_API_KEY = None
 ROOT_PATH = None
+LETTERBOXD_WATCHED_FILES = None
+
+
+def parse_letterboxd_csv(filepath):
+    movies = []
+    with open(filepath, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader, None)  # Skip header
+        for row in reader:
+            if len(row) != 4:
+                print(f"Invalid row skipped: {row}")
+                continue
+            date, title, year, url = row
+            movies.append({
+                'title': title,
+                'year': int(year),
+            })
+    return movies
+
+
+def is_movie_in_letterboxd_list(letterboxd_data, title, year):
+    for letterboxd_movie in letterboxd_data:
+        if letterboxd_movie['title'].casefold() == title.casefold() and letterboxd_movie['year'] == year:
+            return True
+    return False
 
 
 def get_tmdb_movie(movie):
@@ -145,6 +171,7 @@ if __name__ == '__main__':
     config = load_properties('config.ini')
     ROOT_PATH = config.get('paths', 'root_dir', fallback=None)
     TMDB_API_KEY = config.get('tmdb', 'api_key', fallback=None)
+    LETTERBOXD_WATCHED_FILES = config.get('letterboxd', 'watched_file', fallback=None)
 
     if not ROOT_PATH:
         print("config.ini root_dir not found")
@@ -154,8 +181,14 @@ if __name__ == '__main__':
         print("config.ini api_key not found")
         exit(1)
 
+    if not LETTERBOXD_WATCHED_FILES:
+        print("config.ini watched_file not found")
+        exit(1)
+
+    letterboxd_movies = parse_letterboxd_csv(LETTERBOXD_WATCHED_FILES)
+
     filepaths = find_mkv_files(ROOT_PATH)
-    for filepath in filepaths:
+    for i, filepath in enumerate(filepaths):
 
         filename = os.path.basename(filepath)
         movie = parse_title_and_year(filename)
@@ -164,18 +197,26 @@ if __name__ == '__main__':
             # print("No match: " + filename)
             continue
 
-        if LIMIT <= 0:
-            print("Request limit reached")
-            break
+        # We have to wait to respect the TMDB API limit
+        if i % 20 == 0 and i > 0:
+            message = f"Sleeping 10 seconds to respect TMDb rate limit..."
+            print(message, end='', flush=True)
+            time.sleep(10)
+            print('\r' + ' ' * len(message) + '\r', end='', flush=True)
 
         tmdb_movie = get_tmdb_movie(movie)
         if tmdb_movie is None:
             continue
 
-        LIMIT -= 1
-        print(str(movie) + " " + tmdb_movie["imdb_id"])
+        imdb_id = tmdb_movie.get('imdb_id')
+        tmdb_title = tmdb_movie.get('title')
+        tmdb_original_title = tmdb_movie.get('original_title')
+        tmdb_release_date = tmdb_movie.get('release_date')
+        tmdb_release_year = int(tmdb_release_date[:4]) if tmdb_release_date else None
+        watched = is_movie_in_letterboxd_list(letterboxd_movies, tmdb_original_title, tmdb_release_year)
 
-        print("filepath = " + filepath)
+        print(str(movie) + " " + imdb_id + " " + str(watched))
+
         folder_name = os.path.dirname(filepath)
         nfo_root = parse_movie_nfo(os.path.join(folder_name, 'movie.nfo'))
 
@@ -191,6 +232,5 @@ if __name__ == '__main__':
         if nfo_title.casefold() != tmdb_movie['title'].casefold() or nfo_title.casefold() != movie[0].casefold():
             print("    Title difference found")
             print("    NFO movie title: " + nfo_title)
-            print("    TMDB movie title: " + tmdb_movie['title'])
+            print("    TMDB movie title: " + tmdb_title)
             print("    File movie title: " + movie[0])
-
