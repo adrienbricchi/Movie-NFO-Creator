@@ -1,0 +1,30 @@
+#
+# movie NFO creator
+# Copyright (C) 2025 Adrien BRICCHI
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+
+[paths]
+# The folder to scrape
+root_dir = ./
+
+[tmdb]
+# Available in the Account params
+api_key = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+[letterboxd]
+# Available in the Account export data Zip file
+watched_file = ./watched.csv
