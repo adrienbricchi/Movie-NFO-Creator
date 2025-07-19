@@ -55,6 +55,13 @@ def is_movie_in_letterboxd_list(letterboxd_data, title, year):
     return False
 
 
+def wait_for_tmdb_api_rate():
+    message = f"Sleeping 10 seconds to respect TMDb rate limit..."
+    print(message, end='', flush=True)
+    time.sleep(10)
+    print('\r' + ' ' * len(message) + '\r', end='', flush=True)
+
+
 def get_tmdb_movie(movie):
     tmdb_movie = search_movie_tmdb(movie[0], int(movie[1]))
 
@@ -86,7 +93,15 @@ def search_movie_tmdb(title, year=None):
     if year:
         params['year'] = year
 
-    response = requests.get(url, params=params)
+    try:
+        response = requests.get(url, params=params)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            wait_for_tmdb_api_rate()
+            return search_movie_tmdb(title, year)
+        else:
+            raise
+
     data = response.json()
     results = data.get('results', [])
 
@@ -115,7 +130,16 @@ def get_movie_details(tmdb_id):
         'api_key': TMDB_API_KEY,
         'language': 'fr-FR',
     }
-    response = requests.get(url, params=params)
+
+    try:
+        response = requests.get(url, params=params)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            wait_for_tmdb_api_rate()
+            return get_movie_details(tmdb_id)
+        else:
+            raise
+
     data = response.json()
     return data
 
@@ -217,13 +241,6 @@ if __name__ == '__main__':
         if movie is None:
             # print("No match: " + filename)
             continue
-
-        # We have to wait to respect the TMDB API limit
-        if i % 20 == 0 and i > 0:
-            message = f"Sleeping 10 seconds to respect TMDb rate limit..."
-            print(message, end='', flush=True)
-            time.sleep(10)
-            print('\r' + ' ' * len(message) + '\r', end='', flush=True)
 
         tmdb_movie = get_tmdb_movie(movie)
         if tmdb_movie is None:
