@@ -27,11 +27,6 @@ import re
 import xml.etree.ElementTree as ET
 
 
-TMDB_API_KEY = None
-ROOT_PATH = None
-LETTERBOXD_WATCHED_FILES = None
-
-
 def parse_letterboxd_csv(filepath):
     movies = []
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -121,6 +116,14 @@ def find_mkv_files(root_dir):
     return glob.glob(pattern, recursive=True)
 
 
+def are_roughly_equals(title_1, title_2):
+    title_1_cleaned = title_1.replace(':', '-')
+    title_2_cleaned = title_2.replace(':', '-')
+    title_1_cleaned = re.sub(r'\s\(.*?\)$', '', title_1_cleaned)
+    title_2_cleaned = re.sub(r'\s\(.*?\)$', '', title_2_cleaned)
+    return title_1_cleaned.casefold() == title_2_cleaned.casefold()
+
+
 def parse_title_and_year(filename):
     # Matches: "Movie Title (optional stuff, 2024, optional).mkv"
     match = re.match(r'^(.*?)\s*\((?:.*?, )*(\d{4})(?:, .*?)*\)\.mkv$', filename)
@@ -149,21 +152,19 @@ def parse_movie_nfo(filepath):
         return None
 
 
-def get_movie_title(root):
+def get_movie_element(root, node_name):
     try:
         if root.tag != 'movie':
             print("Root tag is not <movie>")
             return None
-        title_element = root.find('title')
+        title_element = root.find(node_name)
         if title_element is not None:
             return title_element.text.strip()
         else:
-            print("<title> tag not found under <movie>")
             return None
     except ET.ParseError as e:
         print(f"XML parsing error: {e}")
         return None
-
 
 
 if __name__ == '__main__':
@@ -213,9 +214,9 @@ if __name__ == '__main__':
         tmdb_original_title = tmdb_movie.get('original_title')
         tmdb_release_date = tmdb_movie.get('release_date')
         tmdb_release_year = int(tmdb_release_date[:4]) if tmdb_release_date else None
-        watched = is_movie_in_letterboxd_list(letterboxd_movies, tmdb_original_title, tmdb_release_year)
+        letterboxd_watched = is_movie_in_letterboxd_list(letterboxd_movies, tmdb_original_title, tmdb_release_year)
 
-        print(str(movie) + " " + imdb_id + " " + str(watched))
+        print(str(movie) + " " + imdb_id)
 
         folder_name = os.path.dirname(filepath)
         nfo_root = parse_movie_nfo(os.path.join(folder_name, 'movie.nfo'))
@@ -224,13 +225,19 @@ if __name__ == '__main__':
             print("Cannot parse NFO: " + filepath)
             continue
 
-        nfo_title = get_movie_title(nfo_root)
+        nfo_title = get_movie_element(nfo_root, "title")
         if nfo_title is None:
             print("Cannot parse NFO title: " + filepath)
             continue
 
-        if nfo_title.casefold() != tmdb_movie['title'].casefold() or nfo_title.casefold() != movie[0].casefold():
+        if not are_roughly_equals(nfo_title, tmdb_movie['title']) or not are_roughly_equals(nfo_title, movie[0]):
             print("    Title difference found")
             print("    NFO movie title: " + nfo_title)
             print("    TMDB movie title: " + tmdb_title)
             print("    File movie title: " + movie[0])
+
+        nfo_watch_count = get_movie_element(nfo_root, "playcount")
+        nfo_watched = nfo_watch_count is not None
+
+        if nfo_watched is not letterboxd_watched:
+            print(f"    Watch status mismatch. letterboxd:{letterboxd_watched}, nfo:{nfo_watched}")
