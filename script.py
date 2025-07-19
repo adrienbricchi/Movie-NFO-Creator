@@ -27,6 +27,10 @@ import re
 import xml.etree.ElementTree as ET
 
 
+def print_error(message):
+    print(f"\033[91m{message}\033[0m")
+
+
 def parse_letterboxd_csv(filepath):
     movies = []
     with open(filepath, 'r', encoding='utf-8') as f:
@@ -46,7 +50,7 @@ def parse_letterboxd_csv(filepath):
 
 def is_movie_in_letterboxd_list(letterboxd_data, title, year):
     for letterboxd_movie in letterboxd_data:
-        if letterboxd_movie['title'].casefold() == title.casefold() and letterboxd_movie['year'] == year:
+        if are_roughly_equals(letterboxd_movie['title'], title) and letterboxd_movie['year'] == year:
             return True
     return False
 
@@ -55,17 +59,17 @@ def get_tmdb_movie(movie):
     tmdb_movie = search_movie_tmdb(movie[0], int(movie[1]))
 
     if tmdb_movie is None or not tmdb_movie.get("id"):
-        print(str(movie) + " not found on TMDB")
+        print_error(str(movie) + " not found on TMDB")
         return None
 
     tmdb_movie = get_movie_details(tmdb_movie['id'])
 
     if tmdb_movie is None:
-        print(str(movie) + " not found on TMDB")
+        print_error(str(movie) + " not found on TMDB")
         return None
 
     if not tmdb_movie.get("imdb_id"):
-        print(str(movie) + " IMDB id not found on TMDB")
+        print_error(str(movie) + " IMDB id not found on TMDB")
         return None
 
     return tmdb_movie
@@ -81,11 +85,27 @@ def search_movie_tmdb(title, year=None):
     }
     if year:
         params['year'] = year
+
     response = requests.get(url, params=params)
     data = response.json()
     results = data.get('results', [])
-    if results:
-        return results[0]
+
+    if not results:
+        return None
+
+    title_cf = title.casefold()
+
+    for result in results:
+        # Check title and release year strictly
+        result_title = result.get('title', '').casefold()
+        result_original = result.get('original_title', '').casefold()
+        release_date = result.get('release_date', '')
+        release_year = int(release_date[:4]) if release_date else None
+
+        if (result_title == title_cf or result_original == title_cf) and (year is None or release_year == year):
+            return result
+
+    # If no strict match
     return None
 
 
@@ -130,7 +150,7 @@ def parse_title_and_year(filename):
     if match:
         title = match.group(1).strip()
         year = match.group(2)
-        return (title, year)
+        return title, year
     return None
 
 
@@ -139,7 +159,7 @@ def parse_movie_nfo(filepath):
         lines = f.readlines()
 
     if len(lines) < 2:
-        print("File too short or invalid format.")
+        print_error("File too short or invalid format.")
         return None
 
     xml_content = ''.join(lines[:-1])  # All lines except the last one
@@ -148,14 +168,14 @@ def parse_movie_nfo(filepath):
         root = ET.fromstring(xml_content)
         return root
     except ET.ParseError as e:
-        print(f"XML parsing error: {e}")
+        print_error(f"XML parsing error: {e}")
         return None
 
 
 def get_movie_element(root, node_name):
     try:
         if root.tag != 'movie':
-            print("Root tag is not <movie>")
+            print_error("Root tag is not <movie>")
             return None
         title_element = root.find(node_name)
         if title_element is not None:
@@ -163,7 +183,7 @@ def get_movie_element(root, node_name):
         else:
             return None
     except ET.ParseError as e:
-        print(f"XML parsing error: {e}")
+        print_error(f"XML parsing error: {e}")
         return None
 
 
@@ -175,15 +195,15 @@ if __name__ == '__main__':
     LETTERBOXD_WATCHED_FILES = config.get('letterboxd', 'watched_file', fallback=None)
 
     if not ROOT_PATH:
-        print("config.ini root_dir not found")
+        print_error("config.ini root_dir not found")
         exit(1)
 
     if not TMDB_API_KEY:
-        print("config.ini api_key not found")
+        print_error("config.ini api_key not found")
         exit(1)
 
     if not LETTERBOXD_WATCHED_FILES:
-        print("config.ini watched_file not found")
+        print_error("config.ini watched_file not found")
         exit(1)
 
     letterboxd_movies = parse_letterboxd_csv(LETTERBOXD_WATCHED_FILES)
@@ -222,12 +242,12 @@ if __name__ == '__main__':
         nfo_root = parse_movie_nfo(os.path.join(folder_name, 'movie.nfo'))
 
         if nfo_root is None:
-            print("Cannot parse NFO: " + filepath)
+            print_error("Cannot parse NFO: " + filepath)
             continue
 
         nfo_title = get_movie_element(nfo_root, "title")
         if nfo_title is None:
-            print("Cannot parse NFO title: " + filepath)
+            print_error("Cannot parse NFO title: " + filepath)
             continue
 
         if not are_roughly_equals(nfo_title, tmdb_movie['title']) or not are_roughly_equals(nfo_title, movie[0]):
@@ -240,4 +260,4 @@ if __name__ == '__main__':
         nfo_watched = nfo_watch_count is not None
 
         if nfo_watched is not letterboxd_watched:
-            print(f"    Watch status mismatch. letterboxd:{letterboxd_watched}, nfo:{nfo_watched}")
+            print_error(f"    Watch status mismatch. letterboxd:{letterboxd_watched}, nfo:{nfo_watched}")
