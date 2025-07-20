@@ -62,14 +62,15 @@ def wait_for_tmdb_api_rate():
     print('\r' + ' ' * len(message) + '\r', end='', flush=True)
 
 
-def get_tmdb_movie(movie):
+def find_tmdb_movie(movie):
+
     tmdb_movie = search_movie_tmdb(movie[0], int(movie[1]))
 
     if tmdb_movie is None or not tmdb_movie.get("id"):
         print_error(str(movie) + " not found on TMDB")
         return None
 
-    tmdb_movie = get_movie_details(tmdb_movie['id'])
+    tmdb_movie = get_movie_by_tmdb_id(tmdb_movie['id'])
 
     if tmdb_movie is None:
         print_error(str(movie) + " not found on TMDB")
@@ -124,7 +125,7 @@ def search_movie_tmdb(title, year=None):
     return None
 
 
-def get_movie_details(tmdb_id):
+def get_movie_by_tmdb_id(tmdb_id):
     url = f'https://api.themoviedb.org/3/movie/{tmdb_id}'
     params = {
         'api_key': TMDB_API_KEY,
@@ -136,7 +137,7 @@ def get_movie_details(tmdb_id):
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 429:
             wait_for_tmdb_api_rate()
-            return get_movie_details(tmdb_id)
+            return get_movie_by_tmdb_id(tmdb_id)
         else:
             raise
 
@@ -144,9 +145,57 @@ def get_movie_details(tmdb_id):
     return data
 
 
+def get_movie_by_imdb_id(imdb_id):
+    url = f'https://api.themoviedb.org/3/find/{imdb_id}'
+    params = {
+        'api_key': TMDB_API_KEY,
+        'external_source': 'imdb_id',
+        'language': 'fr-FR',
+    }
+
+    try:
+        response = requests.get(url, params=params)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            wait_for_tmdb_api_rate()
+            return get_movie_by_imdb_id(imdb_id)
+        else:
+            raise
+
+    data = response.json()
+    movie_results = data.get('movie_results', [])
+    if movie_results:
+        movie = movie_results[0] # Should be unique for a movie
+        movie['imdb_id'] = imdb_id  # Manual injection
+        return movie
+    else:
+        print_error(f"No movie found for IMDb ID {imdb_id}")
+        return None
+
+
+def get_movie_credits(tmdb_id):
+    url = f'https://api.themoviedb.org/3/movie/{tmdb_id}/credits'
+    params = {
+        'api_key': TMDB_API_KEY,
+        'language': 'fr-FR',
+    }
+
+    try:
+        response = requests.get(url, params=params)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 429:
+            wait_for_tmdb_api_rate()
+            return get_movie_credits(tmdb_id)
+        else:
+            raise
+
+    return response.json()
+
+
 def load_properties(filepath):
     config = configparser.ConfigParser()
-    config.read(filepath)
+    with open(filepath, 'r', encoding='utf-8') as file:
+        config.read_file(file)
     return config
 
 
@@ -178,9 +227,70 @@ def parse_title_and_year(filename):
     return None
 
 
-def parse_movie_nfo(filepath):
-    with open(filepath, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
+def parse_movie_nfo_imdb(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            if not lines:
+                return None
+            last_line = lines[-1].strip()
+            match = re.match(r'^https://www\.imdb\.com/title/(tt\d+)$', last_line)
+            if match:
+                return match.group(1)
+            if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
+                print_error(f"Last line is a poor IMDb URL: {last_line}")
+                return None
+            else:
+                print_error(f"Last line is not a valid IMDb URL: {last_line}")
+                return None
+    except Exception as e:
+        print_error(f"Error reading NFO file {filepath}: {e}")
+        return None
+
+
+def prompt_create_movie_nfo(filepath, imdb_url, tmdb_movie, watched):
+
+    credits = get_movie_credits(tmdb_movie['id'])
+    cast_list = [c['name'] for c in credits.get('cast', [])[:5]]
+    directors = [c['name'] for c in credits.get('crew', []) if c.get('job') == 'Director']
+
+    print("\n=== Movie Info ===")
+    print(f"Title: {tmdb_movie.get('title')} ({tmdb_movie.get('release_date', 'N/A')[:4]})")
+    print(f"Director: {directors[0] if directors else 'N/A'}")
+    print("Cast: " + ", ".join(cast_list) if cast_list else "Cast: N/A")
+    print("==================\n")
+
+    answer = input(f"Do you want to create this NFO? [Y/n] ").strip().lower()
+    if answer in ('', 'y', 'yes'):
+        create_movie_nfo(filepath, imdb_url, tmdb_movie, watched)
+    else:
+        print("NFO creation skipped.")
+
+
+def create_movie_nfo(filepath, imdb_id, tmdb_movie, watched):
+    title = tmdb_movie.get("title")
+    title = title.replace('&', '&amp;')
+    title = title.replace('’', "'")
+    try:
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            f.write('<movie>\n')
+            f.write(f'  <title>{title}</title>\n')
+            if watched:
+                f.write('  <playcount>1</playcount>\n')
+            f.write('</movie>\n')
+            f.write("https://www.imdb.com/title/" + imdb_id)
+        print(f"NFO file created at {filepath}")
+    except Exception as e:
+        print_error(f"Error writing NFO file {filepath}: {e}")
+
+
+def parse_movie_nfo_xml(filepath):
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        return None
 
     if len(lines) < 2:
         print_error("File too short or invalid format.")
@@ -237,12 +347,15 @@ if __name__ == '__main__':
 
         filename = os.path.basename(filepath)
         movie = parse_title_and_year(filename)
+        folder_name = os.path.dirname(filepath)
+        movie_nfo_path = os.path.join(folder_name, 'movie.nfo')
+        imdb_id = parse_movie_nfo_imdb(movie_nfo_path)
 
         if movie is None:
             # print("No match: " + filename)
             continue
 
-        tmdb_movie = get_tmdb_movie(movie)
+        tmdb_movie = get_movie_by_imdb_id(imdb_id) if imdb_id else find_tmdb_movie(movie)
         if tmdb_movie is None:
             continue
 
@@ -254,12 +367,10 @@ if __name__ == '__main__':
         letterboxd_watched = is_movie_in_letterboxd_list(letterboxd_movies, tmdb_original_title, tmdb_release_year)
 
         print(str(movie) + " " + imdb_id)
-
-        folder_name = os.path.dirname(filepath)
-        nfo_root = parse_movie_nfo(os.path.join(folder_name, 'movie.nfo'))
+        nfo_root = parse_movie_nfo_xml(movie_nfo_path)
 
         if nfo_root is None:
-            print_error("Cannot parse NFO: " + filepath)
+            prompt_create_movie_nfo(movie_nfo_path, imdb_id, tmdb_movie, letterboxd_watched)
             continue
 
         nfo_title = get_movie_element(nfo_root, "title")
