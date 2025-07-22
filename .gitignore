@@ -319,3 +319,5 @@ __marimo__/
 
 config.ini
 watched.csv
+
+watched_override.csv

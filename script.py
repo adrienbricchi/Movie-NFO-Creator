@@ -360,6 +360,7 @@ def get_movie_elements(root, node_name):
         print_error(f"XML parsing error: {e}")
         return None
 
+
 def indent_xml(elem, level=0):
     i = "\n" + level * "  "
     if len(elem):
@@ -554,6 +555,9 @@ if __name__ == '__main__':
             add_playcount_to_nfo(movie_nfo_path)
 
         nfo_tags = get_movie_elements(nfo_root, "tag")
-        award_tags = [key for key, values in awards.items() if imdb_id in values]
-        for missing_tag in [tag for tag in award_tags if tag not in nfo_tags]:
+        appropriate_award_tags = [key for key, values in awards.items() if imdb_id in values]
+        for missing_tag in [tag for tag in appropriate_award_tags if tag not in nfo_tags]:
             add_tag_to_movie_nfo(movie_nfo_path, missing_tag)
+
+        for irrelevant_tag in [tag for tag in awards.keys() if tag in nfo_tags and imdb_id not in awards[tag]]:
+            print_error("    irrelevant award tag: " + irrelevant_tag)
