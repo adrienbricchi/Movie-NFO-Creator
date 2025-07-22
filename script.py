@@ -240,6 +240,8 @@ def parse_movie_nfo_imdb(filepath):
             if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
                 print_error(f"Last line is a poor IMDb URL: {last_line}")
                 return None
+            if re.match(r'^ https://www.themoviedb.org/.*?$', last_line):
+                return None
             else:
                 print_error(f"Last line is not a valid IMDb URL: {last_line}")
                 return None
@@ -306,6 +308,32 @@ def parse_movie_nfo_xml(filepath):
         return None
 
 
+def parse_awards():
+    result = {}
+    for award_source in [
+        ('Oscar du meilleur film', 'oscar_best_picture.csv'),
+        ('Oscar du meilleur film - Nomination', 'oscar_best_picture_nominee.csv'),
+        ('Oscar du meilleur film international', 'oscar_best_international_picture.csv'),
+        ("Oscar du meilleur film d'animation", 'oscar_best_animated_picture.csv'),
+        ('César du meilleur film', 'cesar_best_picture.csv'),
+        ("Palme d'Or", 'palme_d_or.csv'),
+    ]:
+        result[award_source[0]] = parse_movie_id_csv_into_id_array("./awards/" + award_source[1])
+
+    return result
+
+
+def parse_movie_id_csv_into_id_array(csv_path):
+    result = []
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader, None)  # Skip header
+        for row in reader:
+            title, imdb_id = row
+            result.append(imdb_id)
+    return result
+
+
 def get_movie_element(root, node_name):
     try:
         if root.tag != 'movie':
@@ -319,6 +347,132 @@ def get_movie_element(root, node_name):
     except ET.ParseError as e:
         print_error(f"XML parsing error: {e}")
         return None
+
+
+def get_movie_elements(root, node_name):
+    try:
+        if root.tag != 'movie':
+            print_error("Root tag is not <movie>")
+            return None
+        elements = root.findall(node_name)
+        return [el.text.strip() for el in elements if el is not None and el.text]
+    except ET.ParseError as e:
+        print_error(f"XML parsing error: {e}")
+        return None
+
+def indent_xml(elem, level=0):
+    i = "\n" + level * "  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+           elem.text = i + "  "
+        for child in elem:
+            indent_xml(child, level + 1)
+        if not child.tail or not child.tail.strip():
+            child.tail = i
+    if level and (not elem.tail or not elem.tail.strip()):
+        elem.tail = i
+
+
+def add_tag_to_movie_nfo(nfo_path, tag_value):
+    try:
+        with open(nfo_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        if len(lines) < 2:
+            print_error(f"NFO file too short: {nfo_path}")
+            return False
+
+        xml_content = ''.join(lines[:-1])  # All lines except the last (IMDb link)
+        imdb_link = lines[-1].rstrip('\n')
+
+        root = ET.fromstring(xml_content)
+        if root.tag != 'movie':
+            print_error(f"Root tag is not <movie> in {nfo_path}")
+            return False
+
+        # Add the new <tag>
+        new_element = ET.Element("tag")
+        new_element.text = tag_value
+        root.append(new_element)
+
+        indent_xml(root)
+
+        # Write back the XML with header and IMDb link
+        try:
+            with open(nfo_path, 'w', encoding='utf-8') as f:
+                tree = ET.ElementTree(root)
+                tree.write(f, encoding='unicode', xml_declaration=True)
+                f.write('\n' + imdb_link.strip() + '\n')
+            print(f"Tag <tag>{tag_value}</tag> added and file updated: {nfo_path}")
+        except Exception as e:
+            print_error(f"Error writing NFO with header: {e}")
+
+        return True
+
+    except Exception as e:
+        print_error(f"Error updating NFO {nfo_path}: {e}")
+        return False
+
+
+def ask_and_append_movie_to_watched_override(title, imdb_id):
+    answer = input(f"Add movie '{title}' ({imdb_id}) to watched_override.csv? [Y/n]: ").strip().lower()
+    if answer in ['', 'y', 'yes']:
+        append_movie_to_csv("watched_override.csv", title, imdb_id)
+    else:
+        print("Skipped.")
+
+
+def append_movie_to_csv(csv_path, title, imdb_id):
+    file_exists = os.path.isfile(csv_path)
+    try:
+        with open(csv_path, 'a', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            if not file_exists:
+                writer.writerow(['title', 'imdb_id'])
+            writer.writerow([title, imdb_id])
+        print(f"Movie '{title}' ({imdb_id}) added to {csv_path}")
+    except Exception as e:
+        print(f"Error writing to CSV: {e}")
+
+
+def add_playcount_to_nfo(nfo_path):
+    try:
+        with open(nfo_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        if len(lines) < 2:
+            print(f"File too short: {nfo_path}")
+            return False
+
+        xml_content = ''.join(lines[:-1])
+        imdb_link = lines[-1].rstrip('\n')
+
+        root = ET.fromstring(xml_content)
+        if root.tag != 'movie':
+            print(f"Invalid root tag in {nfo_path}")
+            return False
+
+        if root.find('playcount') is None:
+            playcount_elem = ET.Element('playcount')
+            playcount_elem.text = '1'
+            root.append(playcount_elem)
+        else:
+            print(f"'playcount' already present in {nfo_path}")
+            return False
+
+        indent_xml(root)
+
+        with open(nfo_path, 'w', encoding='utf-8') as f:
+            f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+            f.write(ET.tostring(root, encoding='unicode'))
+            f.write('\n' + imdb_link.strip() + '\n')
+
+        print(f"'playcount' added with indent to {nfo_path}")
+        return True
+
+    except Exception as e:
+        print(f"Error updating playcount in {nfo_path}: {e}")
+        return False
 
 
 if __name__ == '__main__':
@@ -341,6 +495,8 @@ if __name__ == '__main__':
         exit(1)
 
     letterboxd_movies = parse_letterboxd_csv(LETTERBOXD_WATCHED_FILES)
+    override_watched_movies = parse_movie_id_csv_into_id_array('watched_override.csv')
+    awards = parse_awards()
 
     filepaths = find_mkv_files(ROOT_PATH)
     for i, filepath in enumerate(filepaths):
@@ -365,6 +521,8 @@ if __name__ == '__main__':
         tmdb_release_date = tmdb_movie.get('release_date')
         tmdb_release_year = int(tmdb_release_date[:4]) if tmdb_release_date else None
         letterboxd_watched = is_movie_in_letterboxd_list(letterboxd_movies, tmdb_original_title, tmdb_release_year)
+        override_watched = imdb_id in override_watched_movies
+        is_watched = letterboxd_watched or override_watched
 
         print(str(movie) + " " + imdb_id)
         nfo_root = parse_movie_nfo_xml(movie_nfo_path)
@@ -387,5 +545,15 @@ if __name__ == '__main__':
         nfo_watch_count = get_movie_element(nfo_root, "playcount")
         nfo_watched = nfo_watch_count is not None
 
-        if nfo_watched is not letterboxd_watched:
-            print_error(f"    Watch status mismatch. letterboxd:{letterboxd_watched}, nfo:{nfo_watched}")
+        if nfo_watched and not is_watched:
+            print_error("    watched status mismatch")
+            comma_less_title = movie[0].replace(',', '')
+            ask_and_append_movie_to_watched_override(comma_less_title, imdb_id)
+
+        if is_watched and not nfo_watched:
+            add_playcount_to_nfo(movie_nfo_path)
+
+        nfo_tags = get_movie_elements(nfo_root, "tag")
+        award_tags = [key for key, values in awards.items() if imdb_id in values]
+        for missing_tag in [tag for tag in award_tags if tag not in nfo_tags]:
+            add_tag_to_movie_nfo(movie_nfo_path, missing_tag)
