@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "movie-nfo-creator"
+version = "0.1.0"
+description = "A tool to create and manage Kodi NFO files for movies"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "AGPL-3.0-only"}
+authors = [
+    {name = "Adrien BRICCHI"}
+]
+keywords = ["kodi", "nfo", "movies", "tmdb", "letterboxd"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+]
+dependencies = [
+    "requests>=2.25.0",
+]
+
+[project.scripts]
+movie-nfo-creator = "movie_nfo_creator.cli:main"
+
+[project.urls]
+Repository = "https://github.com/adrienbricchi/Movie-NFO-Creator"
+Issues = "https://github.com/adrienbricchi/Movie-NFO-Creator/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
