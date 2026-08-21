@@ -479,11 +479,11 @@ def add_playcount_to_nfo(nfo_path):
 if __name__ == '__main__':
 
     config = load_properties('config.ini')
-    ROOT_PATH = config.get('paths', 'root_dir', fallback=None)
+    ROOT_DIR_ARRAY = config.get('paths', 'root_dir', fallback=None)
     TMDB_API_KEY = config.get('tmdb', 'api_key', fallback=None)
     LETTERBOXD_WATCHED_FILES = config.get('letterboxd', 'watched_file', fallback=None)
 
-    if not ROOT_PATH:
+    if not ROOT_DIR_ARRAY:
         print_error("config.ini root_dir not found")
         exit(1)
 
@@ -499,7 +499,12 @@ if __name__ == '__main__':
     override_watched_movies = parse_movie_id_csv_into_id_array('watched_override.csv')
     awards = parse_awards()
 
-    filepaths = find_mkv_files(ROOT_PATH)
+    dir_roots = ROOT_DIR_ARRAY.split(';')
+    filepaths = []
+    for dir_root in dir_roots:
+        new_filepaths = find_mkv_files(dir_root.strip())
+        filepaths.extend(new_filepaths)
+
     for i, filepath in enumerate(filepaths):
 
         filename = os.path.basename(filepath)

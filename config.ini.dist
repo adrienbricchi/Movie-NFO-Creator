@@ -18,7 +18,7 @@
 #
 
 [paths]
-# The folder to scrape
+# The folder to scrape, can be multiple using a ";" separator
 root_dir = ./
 
 [tmdb]
