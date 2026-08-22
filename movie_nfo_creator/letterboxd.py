@@ -35,12 +35,25 @@ def parse_letterboxd_csv(filepath):
             movies.append({
                 'title': title,
                 'year': int(year),
+                'url': url,
             })
     return movies
 
 
-def is_movie_in_letterboxd_list(letterboxd_data, title, year):
+def letterboxd_id_from_url(url):
+    return url.rstrip('/').rsplit('/', 1)[-1]
+
+
+def resolve_letterboxd_watched(letterboxd_data, movies_db, imdb_id, title, year):
+    cached_entry = movies_db.get(imdb_id)
+    already_cached_as_watched = cached_entry is not None and cached_entry.get('watched', False)
+    if already_cached_as_watched:
+        return True, None
+
     for letterboxd_movie in letterboxd_data:
-        if are_roughly_equals(letterboxd_movie['title'], title) and letterboxd_movie['year'] == year:
-            return True
-    return False
+        title_matches = are_roughly_equals(letterboxd_movie['title'], title)
+        year_matches = year is not None and abs(letterboxd_movie['year'] - year) <= 1
+        if title_matches and year_matches:
+            return True, letterboxd_movie
+
+    return False, None

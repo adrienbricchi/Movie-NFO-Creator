@@ -18,8 +18,10 @@
 #
 
 import time
+from datetime import timedelta
 
 import requests
+import requests_cache
 
 from .util import print_error
 
@@ -37,6 +39,11 @@ class TmdbClient:
     def __init__(self, api_key, language='fr-FR'):
         self.api_key = api_key
         self.language = language
+        self.session = requests_cache.CachedSession(
+            'local',
+            expire_after=timedelta(days=1),
+            allowable_codes=(200,),
+        )
 
     def find_movie(self, movie):
         tmdb_movie = self.search_movie(movie[0], int(movie[1]))
@@ -69,7 +76,7 @@ class TmdbClient:
             params['year'] = year
 
         try:
-            response = requests.get(url, params=params)
+            response = self.session.get(url, params=params)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
                 wait_for_tmdb_api_rate()
@@ -106,7 +113,7 @@ class TmdbClient:
         }
 
         try:
-            response = requests.get(url, params=params)
+            response = self.session.get(url, params=params)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
                 wait_for_tmdb_api_rate()
@@ -125,7 +132,7 @@ class TmdbClient:
         }
 
         try:
-            response = requests.get(url, params=params)
+            response = self.session.get(url, params=params)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
                 wait_for_tmdb_api_rate()
@@ -151,7 +158,7 @@ class TmdbClient:
         }
 
         try:
-            response = requests.get(url, params=params)
+            response = self.session.get(url, params=params)
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 429:
                 wait_for_tmdb_api_rate()
