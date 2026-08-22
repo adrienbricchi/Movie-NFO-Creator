@@ -29,7 +29,7 @@ def find_mkv_files(root_dir):
         '**',
         '*.mkv'
     )
-    return glob.glob(pattern, recursive=True)
+    return [path for path in glob.glob(pattern, recursive=True) if os.path.isfile(path)]
 
 
 def are_roughly_equals(title_1, title_2):
