@@ -1,0 +1,23 @@
+[project]
+name = "movie-nfo-creator"
+version = "0.1.0"
+description = "Scans a movie library and creates/updates Kodi NFO files using TMDb, Letterboxd watch history, and awards data."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "AGPL-3.0-only" }
+dependencies = [
+    "requests>=2.31",
+]
+
+[project.scripts]
+movie-nfo-creator = "movie_nfo_creator.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["movie_nfo_creator"]
+
+[tool.setuptools.package-data]
+movie_nfo_creator = ["awards/*.csv"]
