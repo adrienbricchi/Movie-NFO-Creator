@@ -46,7 +46,22 @@ class TmdbClient:
             'local',
             expire_after=timedelta(days=1),
             allowable_codes=(200,),
+            wal=True,
         )
+
+    def _request(self, url, params):
+        try:
+            return self.session.get(url, params=params)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                wait_for_tmdb_api_rate()
+                return self._request(url, params)
+            raise
+        except Exception as e:
+            print_error(f"Corrupted cache entry for {url}, deleting and refetching: {e}")
+            prepared_request = self.session.prepare_request(requests.Request('GET', url, params=params))
+            self.session.cache.delete(self.session.cache.create_key(prepared_request))
+            return self.session.get(url, params=params)
 
     def find_movie(self, movie):
         tmdb_movie = self.search_movie(movie[0], int(movie[1]))
@@ -76,15 +91,7 @@ class TmdbClient:
             'language': self.language,
         }
 
-        try:
-            response = self.session.get(url, params=params)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                wait_for_tmdb_api_rate()
-                return self.search_movie(title, year)
-            else:
-                raise
-
+        response = self._request(url, params)
         results = response.json().get('results', [])
 
         strict_match = self._best_result(results, title, year, fuzzy_title=False, year_tolerance=0)
@@ -119,16 +126,7 @@ class TmdbClient:
             'language': self.language,
         }
 
-        try:
-            response = self.session.get(url, params=params)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                wait_for_tmdb_api_rate()
-                return self.get_movie_by_id(tmdb_id)
-            else:
-                raise
-
-        return response.json()
+        return self._request(url, params).json()
 
     def get_movie_by_imdb_id(self, imdb_id):
         url = f'{self.BASE_URL}/find/{imdb_id}'
@@ -138,16 +136,7 @@ class TmdbClient:
             'language': self.language,
         }
 
-        try:
-            response = self.session.get(url, params=params)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                wait_for_tmdb_api_rate()
-                return self.get_movie_by_imdb_id(imdb_id)
-            else:
-                raise
-
-        data = response.json()
+        data = self._request(url, params).json()
         movie_results = data.get('movie_results', [])
         if movie_results:
             movie = movie_results[0]  # Should be unique for a movie
@@ -164,13 +153,4 @@ class TmdbClient:
             'language': self.language,
         }
 
-        try:
-            response = self.session.get(url, params=params)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429:
-                wait_for_tmdb_api_rate()
-                return self.get_movie_credits(tmdb_id)
-            else:
-                raise
-
-        return response.json()
+        return self._request(url, params).json()

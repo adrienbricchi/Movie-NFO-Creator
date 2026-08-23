@@ -17,8 +17,37 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+import threading
+
 from tqdm import tqdm
+
+_error_buffer = None
+_error_buffer_lock = threading.Lock()
 
 
 def print_error(message):
-    tqdm.write(f"\033[91m{message}\033[0m")
+    formatted = f"\033[91m{message}\033[0m"
+    with _error_buffer_lock:
+        if _error_buffer is not None:
+            _error_buffer.append(formatted)
+            return
+    tqdm.write(formatted)
+
+
+def start_error_buffering():
+    global _error_buffer
+    with _error_buffer_lock:
+        _error_buffer = []
+
+
+def buffered_error_count():
+    with _error_buffer_lock:
+        return len(_error_buffer) if _error_buffer is not None else 0
+
+
+def flush_buffered_errors():
+    global _error_buffer
+    with _error_buffer_lock:
+        messages, _error_buffer = _error_buffer, None
+    for message in messages or []:
+        tqdm.write(message)

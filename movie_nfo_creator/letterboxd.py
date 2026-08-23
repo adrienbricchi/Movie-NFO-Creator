@@ -51,9 +51,8 @@ def resolve_letterboxd_watched(letterboxd_data, movies_db, imdb_id, title, year)
         return True, None
 
     for letterboxd_movie in letterboxd_data:
-        title_matches = are_roughly_equals(letterboxd_movie['title'], title)
         year_matches = year is not None and abs(letterboxd_movie['year'] - year) <= 1
-        if title_matches and year_matches:
+        if year_matches and are_roughly_equals(letterboxd_movie['title'], title):
             return True, letterboxd_movie
 
     return False, None

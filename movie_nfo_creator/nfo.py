@@ -27,23 +27,25 @@ def parse_movie_nfo_imdb(filepath):
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             lines = f.readlines()
-            if not lines:
-                return None
-            last_line = lines[-1].strip()
-            match = re.match(r'^https://www\.imdb\.com/title/(tt\d+)$', last_line)
-            if match:
-                return match.group(1)
-            if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
-                print_error(f"Last line is a poor IMDb URL: {last_line}")
-                return None
-            if re.match(r'^ https://www.themoviedb.org/.*?$', last_line):
-                return None
-            else:
-                print_error(f"Last line is not a valid IMDb URL: {last_line}")
-                return None
+    except FileNotFoundError:
+        return None
     except Exception as e:
         print_error(f"Error reading NFO file {filepath}: {e}")
         return None
+
+    if not lines:
+        return None
+    last_line = lines[-1].strip()
+    match = re.match(r'^https://www\.imdb\.com/title/(tt\d+)$', last_line)
+    if match:
+        return match.group(1)
+    if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
+        print_error(f"Last line is a poor IMDb URL: {last_line}")
+        return None
+    if re.match(r'^ https://www.themoviedb.org/.*?$', last_line):
+        return None
+    print_error(f"Last line is not a valid IMDb URL: {last_line}")
+    return None
 
 
 def prompt_create_movie_nfo(filepath, imdb_url, tmdb_movie, watched, tmdb_client):
