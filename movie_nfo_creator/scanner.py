@@ -32,12 +32,19 @@ def find_mkv_files(root_dir):
     return [path for path in glob.glob(pattern, recursive=True) if os.path.isfile(path)]
 
 
-def are_roughly_equals(title_1, title_2):
-    title_1_cleaned = title_1.replace(':', '-')
-    title_2_cleaned = title_2.replace(':', '-')
-    title_1_cleaned = re.sub(r'\s\(.*?\)$', '', title_1_cleaned)
-    title_2_cleaned = re.sub(r'\s\(.*?\)$', '', title_2_cleaned)
-    return title_1_cleaned.casefold() == title_2_cleaned.casefold()
+def _normalize_for_comparison(title, filename_lenient):
+    normalized = title
+    if filename_lenient:
+        normalized = normalized.replace(':', '-')
+        normalized = re.sub(r'\s?\?$', '', normalized)
+        normalized = re.sub(r'\s+&\s+', ' and ', normalized)
+        normalized = re.sub(r'\bet\b', 'and', normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r'\s\(.*?\)$', '', normalized)
+    return normalized.casefold()
+
+
+def are_roughly_equals(title_1, title_2, filename_lenient=True):
+    return _normalize_for_comparison(title_1, filename_lenient) == _normalize_for_comparison(title_2, filename_lenient)
 
 
 def parse_title_and_year(filename):

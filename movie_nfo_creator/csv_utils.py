@@ -18,7 +18,6 @@
 #
 
 import csv
-import os
 
 
 def parse_movie_id_csv_into_id_array(csv_path):
@@ -30,16 +29,3 @@ def parse_movie_id_csv_into_id_array(csv_path):
             title, imdb_id = row
             result.append(imdb_id)
     return result
-
-
-def append_movie_to_csv(csv_path, title, imdb_id):
-    file_exists = os.path.isfile(csv_path)
-    try:
-        with open(csv_path, 'a', encoding='utf-8', newline='') as f:
-            writer = csv.writer(f)
-            if not file_exists:
-                writer.writerow(['title', 'imdb_id'])
-            writer.writerow([title, imdb_id])
-        print(f"Movie '{title}' ({imdb_id}) added to {csv_path}")
-    except Exception as e:
-        print(f"Error writing to CSV: {e}")

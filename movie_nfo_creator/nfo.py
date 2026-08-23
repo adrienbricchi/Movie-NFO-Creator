@@ -20,7 +20,6 @@
 import re
 import xml.etree.ElementTree as ET
 
-from .csv_utils import append_movie_to_csv
 from .util import print_error
 
 
@@ -184,14 +183,6 @@ def add_tag_to_movie_nfo(nfo_path, tag_value):
     except Exception as e:
         print_error(f"Error updating NFO {nfo_path}: {e}")
         return False
-
-
-def ask_and_append_movie_to_watched_override(title, imdb_id):
-    answer = input(f"Add movie '{title}' ({imdb_id}) to watched_override.csv? [Y/n]: ").strip().lower()
-    if answer in ['', 'y', 'yes']:
-        append_movie_to_csv("watched_override.csv", title, imdb_id)
-    else:
-        print("Skipped.")
 
 
 def add_playcount_to_nfo(nfo_path):

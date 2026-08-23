@@ -320,5 +320,5 @@ __marimo__/
 config.ini
 watched.csv
 
-watched_override.csv
-cache.csv
+watched_override.csv.bak
+local.sqlite

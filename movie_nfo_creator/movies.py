@@ -71,3 +71,18 @@ def upsert_movie(db_path, imdb_id, title, letterboxd_id, tmdb_id, watched):
         conn.commit()
     finally:
         conn.close()
+
+
+def ask_and_mark_watched(db_path, movies_db, imdb_id, title, tmdb_id=''):
+    answer = input(f"Mark movie '{title}' ({imdb_id}) as watched? [Y/n]: ").strip().lower()
+    if answer not in ('', 'y', 'yes'):
+        print("Skipped.")
+        return
+
+    cached_entry = movies_db.get(imdb_id)
+    letterboxd_id = cached_entry['letterboxd_id'] if cached_entry else ''
+    tmdb_id = cached_entry['tmdb_id'] if cached_entry else tmdb_id
+
+    upsert_movie(db_path, imdb_id, title, letterboxd_id, tmdb_id, True)
+    movies_db[imdb_id] = {'title': title, 'letterboxd_id': letterboxd_id, 'tmdb_id': tmdb_id, 'watched': True}
+    print(f"Movie '{title}' ({imdb_id}) marked as watched.")

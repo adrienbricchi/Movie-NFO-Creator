@@ -17,5 +17,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+from tqdm import tqdm
+
+
 def print_error(message):
-    print(f"\033[91m{message}\033[0m")
+    tqdm.write(f"\033[91m{message}\033[0m")

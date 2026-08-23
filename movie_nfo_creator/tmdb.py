@@ -23,7 +23,10 @@ from datetime import timedelta
 import requests
 import requests_cache
 
+from .scanner import are_roughly_equals
 from .util import print_error
+
+YEAR_TOLERANCE = 1
 
 
 def wait_for_tmdb_api_rate():
@@ -72,8 +75,6 @@ class TmdbClient:
             'include_adult': 'false',
             'language': self.language,
         }
-        if year:
-            params['year'] = year
 
         try:
             response = self.session.get(url, params=params)
@@ -84,25 +85,31 @@ class TmdbClient:
             else:
                 raise
 
-        data = response.json()
-        results = data.get('results', [])
+        results = response.json().get('results', [])
 
-        if not results:
-            return None
+        strict_match = self._best_result(results, title, year, fuzzy_title=False, year_tolerance=0)
+        return strict_match or self._best_result(results, title, year, fuzzy_title=True, year_tolerance=YEAR_TOLERANCE)
 
+    @staticmethod
+    def _best_result(results, title, year, fuzzy_title, year_tolerance):
         title_cf = title.casefold()
 
         for result in results:
-            # Check title and release year strictly
-            result_title = result.get('title', '').casefold()
-            result_original = result.get('original_title', '').casefold()
+            result_title = result.get('title', '')
+            result_original = result.get('original_title', '')
             release_date = result.get('release_date', '')
             release_year = int(release_date[:4]) if release_date else None
 
-            if (result_title == title_cf or result_original == title_cf) and (year is None or release_year == year):
+            if fuzzy_title:
+                title_matches = are_roughly_equals(result_title, title) or are_roughly_equals(result_original, title)
+            else:
+                title_matches = result_title.casefold() == title_cf or result_original.casefold() == title_cf
+
+            year_matches = year is None or (release_year is not None and abs(release_year - year) <= year_tolerance)
+
+            if title_matches and year_matches:
                 return result
 
-        # If no strict match
         return None
 
     def get_movie_by_id(self, tmdb_id):

@@ -24,13 +24,11 @@ from tqdm import tqdm
 
 from .awards import parse_awards
 from .config import load_config
-from .csv_utils import parse_movie_id_csv_into_id_array
-from .movies import load_movies_db, upsert_movie
 from .letterboxd import letterboxd_id_from_url, parse_letterboxd_csv, resolve_letterboxd_watched
+from .movies import ask_and_mark_watched, load_movies_db, upsert_movie
 from .nfo import (
     add_playcount_to_nfo,
     add_tag_to_movie_nfo,
-    ask_and_append_movie_to_watched_override,
     get_movie_element,
     get_movie_elements,
     parse_movie_nfo_imdb,
@@ -60,13 +58,13 @@ def main():
 
     letterboxd_movies = parse_letterboxd_csv(config.letterboxd_watched_file)
     movies_db = load_movies_db(MOVIES_DB_PATH)
-    override_watched_movies = parse_movie_id_csv_into_id_array('watched_override.csv')
     awards = parse_awards()
 
     filepaths = []
     for dir_root in config.root_dirs:
         filepaths.extend(find_mkv_files(dir_root))
 
+    print("\n=== Step 1/3: Parsing library ===")
     entries = []
     for filepath in filepaths:
         filename = os.path.basename(filepath)
@@ -78,6 +76,7 @@ def main():
         imdb_id = parse_movie_nfo_imdb(movie_nfo_path)
         entries.append((filepath, movie, movie_nfo_path, imdb_id))
 
+    print("\n=== Step 2/3: Fetching TMDb data ===")
     tmdb_movies = [None] * len(entries)
     with ThreadPoolExecutor(max_workers=TMDB_FETCH_WORKERS) as executor:
         future_to_index = {
@@ -87,6 +86,7 @@ def main():
         for future in tqdm(as_completed(future_to_index), total=len(entries), desc="Fetching TMDb data"):
             tmdb_movies[future_to_index[future]] = future.result()
 
+    print("\n=== Step 3/3: Checking for mismatches ===")
     for (filepath, movie, movie_nfo_path, imdb_id), tmdb_movie in zip(entries, tmdb_movies):
 
         if tmdb_movie is None:
@@ -116,8 +116,7 @@ def main():
                 'tmdb_id': tmdb_id,
                 'watched': letterboxd_watched,
             }
-        override_watched = imdb_id in override_watched_movies
-        is_watched = letterboxd_watched or override_watched
+        is_watched = letterboxd_watched
 
         nfo_root = parse_movie_nfo_xml(movie_nfo_path)
 
@@ -130,7 +129,9 @@ def main():
             print_error("Cannot parse NFO title: " + filepath)
             continue
 
-        if not are_roughly_equals(nfo_title, tmdb_movie['title']) or not are_roughly_equals(nfo_title, movie[0]):
+        nfo_matches_tmdb = are_roughly_equals(nfo_title, tmdb_movie['title'], filename_lenient=False)
+        nfo_matches_filename = are_roughly_equals(nfo_title, movie[0])
+        if not nfo_matches_tmdb or not nfo_matches_filename:
             print("    Title difference found")
             print("    NFO movie title: " + nfo_title)
             print("    TMDB movie title: " + tmdb_title)
@@ -142,7 +143,7 @@ def main():
         if nfo_watched and not is_watched:
             print_error("    watched status mismatch")
             comma_less_title = movie[0].replace(',', '')
-            ask_and_append_movie_to_watched_override(comma_less_title, imdb_id)
+            ask_and_mark_watched(MOVIES_DB_PATH, movies_db, imdb_id, comma_less_title, tmdb_movie.get('id', ''))
 
         if is_watched and not nfo_watched:
             add_playcount_to_nfo(movie_nfo_path)
