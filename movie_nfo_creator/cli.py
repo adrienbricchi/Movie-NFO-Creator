@@ -17,6 +17,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+import argparse
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -25,6 +26,23 @@ from tqdm import tqdm
 from .awards import parse_awards
 from .config import load_config
 from .letterboxd import letterboxd_id_from_url, parse_letterboxd_csv, resolve_letterboxd_watched
+from .mkv import (
+    extract_chapter_start_times,
+    format_size_fr,
+    has_no_chapters,
+    has_overlapping_chapters,
+    missing_audio_languages,
+    missing_hdr_tag_reason,
+    probe_mediainfo,
+    probe_mkv,
+    reencode_reason,
+    reencode_savings_bytes,
+    repetitive_chapters_reason,
+    resolution_tag_mismatch_reason,
+    uhd_reencode_reason,
+    unwarranted_hdr_tag_reason,
+)
+from .mkv_cache import load_cached_deep_analysis, store_deep_analysis_cache
 from .movies import ask_and_mark_watched, load_movies_db, upsert_movie
 from .nfo import (
     add_playcount_to_nfo,
@@ -35,7 +53,16 @@ from .nfo import (
     parse_movie_nfo_xml,
     prompt_create_movie_nfo,
 )
-from .scanner import are_roughly_equals, find_mkv_files, parse_title_and_year
+from .scanner import (
+    are_roughly_equals,
+    declared_resolution_class,
+    find_mkv_files,
+    has_hdr_tag,
+    is_vost,
+    is_web,
+    parse_title_and_year,
+)
+from .rules import RankedRule, RankedRuleRunner, SimpleRule, SimpleRuleRunner
 from .tmdb import TmdbClient
 from .util import buffered_error_count, flush_buffered_errors, print_error, start_error_buffering
 
@@ -44,16 +71,133 @@ NFO_PARSE_WORKERS = 8
 COMPARISON_WORKERS = 8
 MOVIES_DB_PATH = 'local.sqlite'
 
+SIMPLE_RULES = [
+    SimpleRule(
+        'missing_track_languages', 'Missing audio language tracks',
+        lambda analysis: (
+            ["missing audio track(s) for: " + ", ".join(analysis['missing_track_languages'])]
+            if analysis['missing_track_languages'] else None
+        ),
+    ),
+    SimpleRule(
+        'chapter_issues', 'Chapter issues found',
+        lambda analysis: (
+            ["chapter issue: " + issue for issue in analysis['chapter_issues']]
+            if analysis['chapter_issues'] else None
+        ),
+    ),
+    SimpleRule(
+        'missing_hdr_tag', 'Missing HDR tag in filename',
+        lambda analysis: (
+            ["missing HDR tag in filename for: " + analysis['missing_hdr_tag']]
+            if analysis['missing_hdr_tag'] else None
+        ),
+    ),
+    SimpleRule(
+        'unwarranted_hdr_tag', 'HDR tag in filename but non-HDR video',
+        lambda analysis: [analysis['unwarranted_hdr_tag']] if analysis['unwarranted_hdr_tag'] else None,
+    ),
+    SimpleRule(
+        'resolution_tag_mismatch', 'Resolution tag mismatch',
+        lambda analysis: [analysis['resolution_tag_mismatch']] if analysis['resolution_tag_mismatch'] else None,
+    ),
+    SimpleRule(
+        'folder_name_mismatch', 'File/folder name mismatch',
+        lambda analysis: (
+            ["file name doesn't match parent folder name"] if analysis['folder_name_mismatch'] else None
+        ),
+    ),
+]
+
+REENCODE_RULE = RankedRule(
+    'reencode', 'Re-encode candidates',
+    lambda analysis: (
+        (
+            ["reencode candidate: " + reason for reason in analysis['reencode_reasons']],
+            analysis['reencode_savings_bytes'],
+        )
+        if analysis['reencode_reasons'] else None
+    ),
+    per_file_value_label='estimated savings',
+    total_value_label='Estimated re-encode savings',
+    ranked_header='Top 5 most profitable re-encodes:',
+    format_value=format_size_fr,
+)
+
 
 def fetch_tmdb_movie(tmdb_client, movie, imdb_id):
     return tmdb_client.get_movie_by_imdb_id(imdb_id) if imdb_id else tmdb_client.find_movie(movie)
 
 
-def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards):
+def ensure_mediainfo(filepath, mkv_info, config):
+    needs_mediainfo_probe = mkv_info is not None and 'hdr_formats' not in mkv_info
+    if not needs_mediainfo_probe:
+        return mkv_info, False
+
+    mediainfo_info = probe_mediainfo(filepath, config.mediainfo_dir)
+    if mediainfo_info is None:
+        return mkv_info, False
+
+    mkv_info.update(mediainfo_info)
+    return mkv_info, True
+
+
+def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards, config, no_cache=False):
     filepath, movie, movie_nfo_path, _ = entry
 
+    result = {
+        'skip': tmdb_movie is None,
+        'missing_track_languages': [],
+        'reencode_reasons': [],
+        'reencode_savings_bytes': None,
+        'chapter_issues': [],
+        'missing_hdr_tag': None,
+        'unwarranted_hdr_tag': None,
+        'resolution_tag_mismatch': None,
+        'folder_name_mismatch': (
+            os.path.splitext(os.path.basename(filepath))[0] != os.path.basename(os.path.dirname(filepath))
+        ),
+    }
+
+    cached = None if no_cache else load_cached_deep_analysis(MOVIES_DB_PATH, filepath)
+    if cached is not None:
+        mkv_info, chapter_starts = cached
+        mkv_info, mediainfo_backfilled = ensure_mediainfo(filepath, mkv_info, config)
+        if mediainfo_backfilled:
+            store_deep_analysis_cache(MOVIES_DB_PATH, filepath, mkv_info, chapter_starts)
+    else:
+        mkv_info = probe_mkv(filepath, config.mkvtoolnix_dir)
+        chapter_starts = extract_chapter_start_times(filepath, config.mkvtoolnix_dir)
+        mkv_info, _ = ensure_mediainfo(filepath, mkv_info, config)
+        store_deep_analysis_cache(MOVIES_DB_PATH, filepath, mkv_info, chapter_starts)
+
+    if mkv_info is not None:
+        original_language = tmdb_movie.get('original_language') if tmdb_movie else None
+        require_french = not is_vost(os.path.basename(filepath))
+        result['missing_track_languages'] = missing_audio_languages(mkv_info, original_language, require_french)
+        result['reencode_reasons'] = [
+            reason for reason in (reencode_reason(mkv_info), uhd_reencode_reason(mkv_info)) if reason
+        ]
+        if result['reencode_reasons']:
+            result['reencode_savings_bytes'] = reencode_savings_bytes(mkv_info)
+        has_hdr_tag_in_filename = has_hdr_tag(os.path.basename(filepath))
+        result['missing_hdr_tag'] = missing_hdr_tag_reason(mkv_info, has_hdr_tag_in_filename)
+        result['unwarranted_hdr_tag'] = unwarranted_hdr_tag_reason(mkv_info, has_hdr_tag_in_filename)
+        result['resolution_tag_mismatch'] = resolution_tag_mismatch_reason(
+            mkv_info, declared_resolution_class(os.path.basename(filepath))
+        )
+
+    if chapter_starts is not None:
+        if has_no_chapters(chapter_starts) and not is_web(os.path.basename(filepath)):
+            result['chapter_issues'].append("no chapters")
+        if has_overlapping_chapters(chapter_starts):
+            result['chapter_issues'].append("overlapping/out-of-order chapters")
+        repetitive_reason = repetitive_chapters_reason(chapter_starts)
+        if repetitive_reason:
+            result['chapter_issues'].append(repetitive_reason)
+
     if tmdb_movie is None:
-        return {'skip': True}
+        return result
 
     imdb_id = tmdb_movie.get('imdb_id')
     tmdb_title = tmdb_movie.get('title')
@@ -64,8 +208,7 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awa
         letterboxd_movies, movies_db, imdb_id, tmdb_original_title, tmdb_release_year
     )
 
-    result = {
-        'skip': False,
+    result.update({
         'imdb_id': imdb_id,
         'tmdb_original_title': tmdb_original_title,
         'matched_letterboxd_movie': matched_letterboxd_movie,
@@ -76,7 +219,7 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awa
         'nfo_watched': False,
         'missing_tags': [],
         'irrelevant_tags': [],
-    }
+    })
 
     if nfo_root is None:
         return result
@@ -109,12 +252,27 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awa
     return result
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--no-cache',
+        action='store_true',
+        help="ignore the mkv deep-analysis cache and re-probe every file (mkvmerge/mkvextract/mediainfo)",
+    )
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
     try:
         config = load_config('config.ini')
     except (ValueError, FileNotFoundError) as e:
         print_error(str(e))
         raise SystemExit(1)
+
+    if args.no_cache:
+        print("--no-cache: ignoring cached mkv analysis, re-probing every file")
 
     tmdb_client = TmdbClient(config.tmdb_api_key)
 
@@ -124,11 +282,12 @@ def main():
 
     filepaths = []
     for dir_root in config.root_dirs:
+        print(f"Scanning {dir_root}...")
         filepaths.extend(find_mkv_files(dir_root))
 
     print("\n=== Step 1/5: Parsing library ===")
     entries = []
-    for filepath in filepaths:
+    for filepath in tqdm(filepaths, desc="Parsing library"):
         filename = os.path.basename(filepath)
         movie = parse_title_and_year(filename)
         if movie is None:
@@ -168,15 +327,15 @@ def main():
                 progress.update(1)
     flush_buffered_errors()
 
-    print("\n=== Step 4/5: Resolving movie data ===")
+    print("\n=== Step 4/5: Resolving movie file data ===")
     start_error_buffering()
     analyses = [None] * len(entries)
     with ThreadPoolExecutor(max_workers=COMPARISON_WORKERS) as executor:
         future_to_index = {
-            executor.submit(analyze_movie, entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards): index
+            executor.submit(analyze_movie, entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards, config, args.no_cache): index
             for index, (entry, tmdb_movie, nfo_root) in enumerate(zip(entries, tmdb_movies, nfo_roots))
         }
-        with tqdm(total=len(entries), desc="Resolving movie data") as progress:
+        with tqdm(total=len(entries), desc="Resolving movie file data") as progress:
             for future in as_completed(future_to_index):
                 analyses[future_to_index[future]] = future.result()
                 progress.set_postfix(errors=buffered_error_count())
@@ -185,14 +344,21 @@ def main():
 
     print("\n=== Step 5/5: Checking for mismatches ===")
     title_diff_count = 0
+    title_diff_examples = []
     missing_nfo_count = 0
     tmdb_unmatched_count = 0
+    simple_rules_runner = SimpleRuleRunner(SIMPLE_RULES)
+    reencode_runner = RankedRuleRunner(REENCODE_RULE)
+    movie_locations = {}
     for (filepath, movie, movie_nfo_path, _), tmdb_movie, nfo_root, analysis in zip(entries, tmdb_movies, nfo_roots, analyses):
 
         if nfo_root is None:
             missing_nfo_count += 1
             print(filepath)
             print("    Missing NFO")
+
+        simple_rules_runner.run(filepath, analysis)
+        reencode_runner.run(filepath, analysis)
 
         if tmdb_movie is None or analysis['skip']:
             tmdb_unmatched_count += 1
@@ -202,6 +368,13 @@ def main():
         tmdb_original_title = analysis['tmdb_original_title']
         matched_letterboxd_movie = analysis['matched_letterboxd_movie']
         is_watched = analysis['is_watched']
+
+        folder = os.path.dirname(filepath)
+        other_folders = movie_locations.setdefault(imdb_id, [])
+        if other_folders and folder not in other_folders:
+            print(filepath)
+            print_error("    duplicate: same IMDb id as " + other_folders[0])
+        other_folders.append(folder)
 
         cached_entry = movies_db.get(imdb_id)
         newly_confirmed_watched = matched_letterboxd_movie is not None and not (cached_entry and cached_entry['watched'])
@@ -231,6 +404,7 @@ def main():
 
         if analysis['title_diff']:
             title_diff_count += 1
+            title_diff_examples.append(filepath)
             diff = analysis['title_diff']
             print(filepath)
             print("    Title difference found")
@@ -253,11 +427,29 @@ def main():
         for irrelevant_tag in analysis['irrelevant_tags']:
             print_error("    irrelevant award tag: " + irrelevant_tag)
 
-    if title_diff_count or missing_nfo_count or tmdb_unmatched_count:
+    duplicate_groups = {
+        imdb_id: sorted(set(folders)) for imdb_id, folders in movie_locations.items() if len(set(folders)) > 1
+    }
+
+    any_issues = (
+        title_diff_count or missing_nfo_count or tmdb_unmatched_count
+        or simple_rules_runner.any_issues() or reencode_runner.any_issues() or duplicate_groups
+    )
+    if any_issues:
         print("\n=== Summary ===")
         if title_diff_count:
             print("Title differences found: " + str(title_diff_count))
+            for example_filepath in title_diff_examples[:5]:
+                print("    " + example_filepath)
         if missing_nfo_count:
             print("Missing NFO files: " + str(missing_nfo_count))
         if tmdb_unmatched_count:
             print("TMDb matches not found: " + str(tmdb_unmatched_count))
+        reencode_runner.print_summary()
+        simple_rules_runner.print_summary()
+        if duplicate_groups:
+            print("Duplicate movies (same IMDb id, different folders): " + str(len(duplicate_groups)))
+            for imdb_id, folders in list(duplicate_groups.items())[:5]:
+                print(f"    {imdb_id}:")
+                for folder in folders:
+                    print(f"        {folder}")

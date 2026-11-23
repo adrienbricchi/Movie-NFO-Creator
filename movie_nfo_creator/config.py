@@ -26,6 +26,8 @@ class Config:
     root_dirs: list[str]
     tmdb_api_key: str
     letterboxd_watched_file: str
+    mkvtoolnix_dir: str
+    mediainfo_dir: str
 
 
 def load_config(filepath):
@@ -36,6 +38,8 @@ def load_config(filepath):
     root_dir_value = parser.get('paths', 'root_dir', fallback=None)
     tmdb_api_key = parser.get('tmdb', 'api_key', fallback=None)
     letterboxd_watched_file = parser.get('letterboxd', 'watched_file', fallback=None)
+    mkvtoolnix_dir = parser.get('tracks', 'mkvtoolnix_dir', fallback='')
+    mediainfo_dir = parser.get('tracks', 'mediainfo_dir', fallback='')
 
     if not root_dir_value:
         raise ValueError("config.ini root_dir not found")
@@ -48,4 +52,6 @@ def load_config(filepath):
         root_dirs=[d.strip() for d in root_dir_value.split(';')],
         tmdb_api_key=tmdb_api_key,
         letterboxd_watched_file=letterboxd_watched_file,
+        mkvtoolnix_dir=mkvtoolnix_dir,
+        mediainfo_dir=mediainfo_dir,
     )

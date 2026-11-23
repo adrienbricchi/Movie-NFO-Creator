@@ -76,6 +76,42 @@ def are_roughly_equals(title_1, title_2, filename_lenient=True):
     return False
 
 
+def is_vost(filename):
+    return re.search(r'vost', filename, re.IGNORECASE) is not None
+
+
+def is_web(filename):
+    return re.search(r'\bweb', filename, re.IGNORECASE) is not None
+
+
+HDR_FILENAME_TAG_RE = re.compile(r'\b(hdr10\+|hdr10plus|hdr10|hdr|dolby\s*vision|dovi|hlg)', re.IGNORECASE)
+
+
+def has_hdr_tag(filename):
+    return HDR_FILENAME_TAG_RE.search(filename) is not None
+
+
+RESOLUTION_FILENAME_RE = re.compile(r'\b(2160p|4k|1440p|1080p|720p|576p|480p|sd)\b', re.IGNORECASE)
+
+FILENAME_RESOLUTION_TO_CLASS = {
+    '2160p': '2160p',
+    '4k': '2160p',
+    '1440p': '1440p',
+    '1080p': '1080p',
+    '720p': '720p',
+    '576p': 'SD',
+    '480p': 'SD',
+    'sd': 'SD',
+}
+
+
+def declared_resolution_class(filename):
+    match = RESOLUTION_FILENAME_RE.search(filename)
+    if not match:
+        return None
+    return FILENAME_RESOLUTION_TO_CLASS[match.group(1).lower()]
+
+
 def parse_title_and_year(filename):
     # Matches: "Movie Title (optional stuff, 2024, optional).mkv"
     match = re.match(r'^(.*?)\s*\((?:.*?, )*(\d{4})(?:, .*?)*\)\.mkv$', filename)

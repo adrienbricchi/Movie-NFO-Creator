@@ -28,3 +28,7 @@ api_key = aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 [letterboxd]
 # Available in the Account export data Zip file
 watched_file = ./watched.csv
+
+[tracks]
+mkvtoolnix_dir = C:\Program Files\MKVToolNix
+mediainfo_dir = C:\Program Files\MediaInfo

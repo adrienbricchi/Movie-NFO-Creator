@@ -42,7 +42,7 @@ def parse_movie_nfo_imdb(filepath):
     if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
         print_error(f"Last line is a poor IMDb URL: {last_line}")
         return None
-    if re.match(r'^ https://www.themoviedb.org/.*?$', last_line):
+    if re.match(r'^https://www\.themoviedb\.org/movie/', last_line):
         return None
     print_error(f"Last line is not a valid IMDb URL: {last_line}")
     return None
