@@ -11,7 +11,7 @@ export to mark movies as watched, and tags movies that won/were nominated for
 major awards (Oscars, César, Palme d'Or) using local CSV lookup tables in
 `movie_nfo_creator/awards/`.
 
-There is no test suite — this is a personal, interactive CLI utility.
+This is a personal, interactive CLI utility. A small `unittest` suite lives in `tests/`: `python -m unittest discover -s tests`.
 
 ## Running
 
@@ -116,6 +116,9 @@ movie in `watched_override.csv`.
 award-name → id list. For each movie, missing award tags are appended to the
 NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
+
+The CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
+whose script and tests live in the skill folder, outside the package.
 
 All user-facing text (NFO `<title>` content, printed diffs, award tag names) is
 in French, matching `language=fr-FR` used in the TMDb API calls — preserve this
