@@ -1,0 +1,60 @@
+#
+# movie NFO creator
+# Copyright (C) 2025 Adrien BRICCHI
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as
+# published by the Free Software Foundation, version 3.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+
+import unittest
+
+from movie_nfo_creator.tags import find_tag_mismatches
+
+TAG_LISTS = {
+    'Palme d\'Or': ['tt0000001'],
+    'Star Wars': ['tt0000002', 'tt0000003'],
+}
+
+
+class FindTagMismatchesTest(unittest.TestCase):
+
+    def test_missing_automatic_tag(self):
+        mismatches = find_tag_mismatches([], 'tt0000002', TAG_LISTS)
+
+        self.assertEqual(['Star Wars'], mismatches.missing)
+        self.assertEqual([], mismatches.irrelevant)
+        self.assertEqual([], mismatches.unknown)
+
+    def test_automatic_tag_on_the_wrong_film(self):
+        mismatches = find_tag_mismatches(['Palme d\'Or'], 'tt0000002', TAG_LISTS)
+
+        self.assertEqual(['Star Wars'], mismatches.missing)
+        self.assertEqual(['Palme d\'Or'], mismatches.irrelevant)
+        self.assertEqual([], mismatches.unknown)
+
+    def test_tag_matching_no_automatic_tag(self):
+        mismatches = find_tag_mismatches(['Star Wars', 'Univers cinématographique Marvel'], 'tt0000002', TAG_LISTS)
+
+        self.assertEqual([], mismatches.missing)
+        self.assertEqual([], mismatches.irrelevant)
+        self.assertEqual(['Univers cinématographique Marvel'], mismatches.unknown)
+
+    def test_no_tags_in_nfo(self):
+        mismatches = find_tag_mismatches(None, 'tt0000009', TAG_LISTS)
+
+        self.assertEqual(([], [], []), (mismatches.missing, mismatches.irrelevant, mismatches.unknown))
+
+
+if __name__ == '__main__':
+    unittest.main()
