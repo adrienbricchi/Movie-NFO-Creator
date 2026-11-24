@@ -27,7 +27,7 @@ UNIVERSES_DIR = Path(__file__).parent / 'universes'
 def parse_universes():
     result = {}
     for universe_source in [
-        ('Univers cinématographique Marvel', 'mcu.csv'),
+        ('Marvel Cinematic Universe', 'mcu.csv'),
         ('DC Extended Universe', 'dceu.csv'),
         ('DC Universe', 'dcu.csv'),
         ("Sony's Spider-Man Universe", 'ssu.csv'),
