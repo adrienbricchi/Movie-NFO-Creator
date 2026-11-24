@@ -21,8 +21,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from movie_nfo_creator.awards import AwardSource
-from movie_nfo_creator.refresh_awards import WikidataFilm, build_query, merge_rows, parse_sparql_response, read_rows, write_rows
+from refresh_awards import AWARD_SOURCES, AWARDS_DIR, AwardSource, WikidataFilm, build_query, merge_rows, parse_sparql_response, read_rows, unmapped_csv_files, write_rows
 
 
 def binding(film, imdb, **values):
@@ -59,13 +58,13 @@ class ParseSparqlResponseTest(unittest.TestCase):
 class BuildQueryTest(unittest.TestCase):
 
     def test_winners(self):
-        query = build_query(AwardSource('tag', 'file.csv', 'Q102427'))
+        query = build_query(AwardSource('file.csv', 'Q102427'))
 
         self.assertIn('ps:P166 wd:Q102427', query)
         self.assertNotIn('FILTER NOT EXISTS', query)
 
     def test_nominees_exclude_winners(self):
-        query = build_query(AwardSource('tag', 'file.csv', 'Q102427', nominees_only=True))
+        query = build_query(AwardSource('file.csv', 'Q102427', nominees_only=True))
 
         self.assertIn('ps:P1411 wd:Q102427', query)
         self.assertIn('FILTER NOT EXISTS { ?film p:P166/ps:P166 wd:Q102427 . }', query)
@@ -107,6 +106,19 @@ class MergeRowsTest(unittest.TestCase):
         result = merge_rows([], [WikidataFilm({'tt0000001'}, None, None)])
 
         self.assertEqual([('tt0000001', 'tt0000001')], result.added)
+
+
+class AwardSourcesTest(unittest.TestCase):
+
+    def test_every_award_csv_is_mapped(self):
+        self.assertEqual([], unmapped_csv_files(AWARDS_DIR, AWARD_SOURCES))
+
+    def test_unmapped_csv_is_reported(self):
+        with tempfile.TemporaryDirectory() as directory:
+            (Path(directory) / 'mapped.csv').touch()
+            (Path(directory) / 'new_award.csv').touch()
+
+            self.assertEqual(['new_award.csv'], unmapped_csv_files(Path(directory), [AwardSource('mapped.csv', 'Q1')]))
 
 
 class CsvRoundTripTest(unittest.TestCase):

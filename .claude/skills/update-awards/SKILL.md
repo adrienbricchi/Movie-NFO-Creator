@@ -5,28 +5,29 @@ description: Refresh the award lookup CSVs in movie_nfo_creator/awards/ (Oscars,
 
 # Update the award lists
 
-The award CSVs in `movie_nfo_creator/awards/` are refreshed from Wikidata by `movie_nfo_creator/refresh_awards.py`.
+The award CSVs in `movie_nfo_creator/awards/` are refreshed from Wikidata by this skill's `scripts/refresh_awards.py`, kept out of the package on purpose.
 The script only appends films missing locally, and never removes a row: Wikidata lacks some older winners and lags on recent ceremonies, so local rows stay authoritative.
-Which CSV maps to which Wikidata award item is `AWARD_SOURCES` in `movie_nfo_creator/awards.py`.
+Which CSV maps to which Wikidata award item is `AWARD_SOURCES` at the top of the script; a new CSV in `awards/` needs an entry there too (the script warns about unmapped ones).
 
 ## Steps
 
 1. From the repo root, run the dry run and read its output:
    ```bash
-   python3 -m movie_nfo_creator.refresh_awards
+   python3 .claude/skills/update-awards/scripts/refresh_awards.py
    ```
    Each `+` line is a film Wikidata lists for that award but the CSV lacks, with its IMDb link.
+   Wikidata's query service is sometimes slow: a run takes up to a minute, and a `ReadTimeout` just needs a re-run.
 2. Vet every `+` line before writing anything: confirm the film really won (or, for the nominee list, was nominated for) that award and that the IMDb id points at the right film,
    e.g. against the award's Wikipedia list of winners. Wikidata mix-ups happen, like Other People's Money (1991) carrying the César of L'Argent des autres (1978).
-3. For each false positive, add its IMDb id to that source's `wikidata_false_positives` in `awards.py`, with a one-line comment naming the film and the mix-up, then re-run the dry run.
+3. For each false positive, add its IMDb id to that source's `wikidata_false_positives` in the script's `AWARD_SOURCES`, with a one-line comment naming the film and the mix-up, then re-run the dry run.
 4. Show the user the vetted additions as IMDb links and get a go-ahead before writing.
 5. Apply them:
    ```bash
-   python3 -m movie_nfo_creator.refresh_awards --write
+   python3 .claude/skills/update-awards/scripts/refresh_awards.py --write
    ```
    New rows are appended at the end of each CSV, sorted by ceremony year, titled with the Wikidata original title (or French/English label).
    Fix a title by hand if it doesn't match the CSV's existing style; the title column is informational, only the IMDb id is used for tagging.
-6. Check `git diff movie_nfo_creator/awards/` and run the tests: `python3 -m unittest discover -s tests`.
+6. Check `git diff movie_nfo_creator/awards/`. After changing the script itself, run its tests: `python3 -m unittest discover -s .claude/skills/update-awards/scripts`.
 
 ## After a new ceremony
 

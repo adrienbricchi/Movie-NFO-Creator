@@ -21,12 +21,12 @@ import argparse
 import csv
 import io
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Optional
 
 import requests
 
-from .awards import AWARD_SOURCES, AWARDS_DIR
-
+AWARDS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'awards'
 WIKIDATA_SPARQL_URL = 'https://query.wikidata.org/sparql'
 USER_AGENT = 'movie-nfo-creator/0.1 (award list refresh)'
 IMDB_URL = 'https://www.imdb.com/title/'
@@ -48,6 +48,25 @@ SELECT ?film ?imdb ?title ?labelFr ?labelEn ?ceremony ?released WHERE {{
 }}
 '''
 WINNER_EXCLUSION = 'FILTER NOT EXISTS {{ ?film p:P166/ps:P166 wd:{award} . }}'
+
+
+@dataclass(frozen=True)
+class AwardSource:
+    filename: str
+    wikidata_award: str
+    nominees_only: bool = False
+    wikidata_false_positives: tuple = ()
+
+
+AWARD_SOURCES = [
+    AwardSource('oscar_best_picture.csv', 'Q102427'),
+    AwardSource('oscar_best_picture_nominee.csv', 'Q102427', nominees_only=True),
+    AwardSource('oscar_best_international_picture.csv', 'Q105304'),
+    AwardSource('oscar_best_animated_picture.csv', 'Q106800'),
+    # tt0102609 is Other People's Money (1991), mixed up on Wikidata with L'Argent des autres (1978).
+    AwardSource('cesar_best_picture.csv', 'Q645595', wikidata_false_positives=('tt0102609',)),
+    AwardSource('palme_d_or.csv', 'Q179808'),
+]
 
 
 @dataclass
@@ -134,6 +153,11 @@ def write_rows(csv_path, rows):
         f.write(buffer.getvalue().rstrip('\n'))
 
 
+def unmapped_csv_files(awards_dir, sources):
+    mapped = {source.filename for source in sources}
+    return sorted(path.name for path in awards_dir.glob('*.csv') if path.name not in mapped)
+
+
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description='Add award winners/nominees found on Wikidata to the local award CSVs. Existing rows are never removed.')
     parser.add_argument('--write', action='store_true', help='write the additions to the CSV files (default: dry run)')
@@ -144,6 +168,9 @@ def parse_args(argv=None):
 def main(argv=None):
     args = parse_args(argv)
     total_added = 0
+
+    for filename in unmapped_csv_files(AWARDS_DIR, AWARD_SOURCES):
+        print(f"{filename}: no Wikidata award mapped in AWARD_SOURCES, skipped")
 
     for source in AWARD_SOURCES:
         csv_path = AWARDS_DIR / source.filename

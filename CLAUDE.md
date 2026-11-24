@@ -117,11 +117,8 @@ award-name → id list. For each movie, missing award tags are appended to the
 NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
 
-`AWARD_SOURCES` in `awards.py` maps each CSV to its tag and its Wikidata award item.
-`refresh_awards.py` (`python -m movie_nfo_creator.refresh_awards [--write]`, dry run by default) queries Wikidata's SPARQL endpoint
-and appends the films missing from each CSV; it never removes a row, since Wikidata lacks older winners and lags on recent ceremonies.
-Known Wikidata mix-ups go in that source's `wikidata_false_positives`.
-The `update-awards` project skill (`.claude/skills/update-awards/`) walks through running and vetting it.
+The CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
+whose script and tests live in the skill folder, outside the package.
 
 All user-facing text (NFO `<title>` content, printed diffs, award tag names) is
 in French, matching `language=fr-FR` used in the TMDb API calls — preserve this

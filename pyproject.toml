@@ -13,7 +13,6 @@ dependencies = [
 
 [project.scripts]
 movie-nfo-creator = "movie_nfo_creator.cli:main"
-movie-nfo-refresh-awards = "movie_nfo_creator.refresh_awards:main"
 
 [build-system]
 requires = ["setuptools>=68"]
