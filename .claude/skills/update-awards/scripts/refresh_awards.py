@@ -69,6 +69,7 @@ AWARD_SOURCES = [
     AwardSource('palme_d_or.csv', 'Q179808'),
     AwardSource('cesar_best_picture_nominee.csv', 'Q645595', nominees_only=True),
     AwardSource('goya_best_picture.csv', 'Q1467554'),
+    AwardSource('bafta_best_film.csv', 'Q139184'),
 ]
 
 
