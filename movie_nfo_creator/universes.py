@@ -53,7 +53,7 @@ def parse_universes():
         ('Moi, moche et méchant', 'despicable_me.csv'),
         ('DC Animated Universe', 'dcau.csv'),
         ('DC Animated Movie Universe', 'dcamu.csv'),
-        ('DC Animated Tomorrowverse', 'dc_tomorrowverse.csv'),
+        ('DC Animated Tomorrowverse', 'dc_animated_tomorrowverse.csv'),
         ('DC Animated Standalone', 'dc_animated_standalone.csv'),
         ('James Bond 007', 'james_bond.csv'),
         ('Superman Cinematic Universe', 'superman_1978.csv'),

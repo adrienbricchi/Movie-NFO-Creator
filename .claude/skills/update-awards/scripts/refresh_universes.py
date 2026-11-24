@@ -83,7 +83,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('despicable_me.csv', ('Q5264979', 'Q98114628', 'Q140478058')),
     UniverseSource('dcau.csv', closed=True),
     UniverseSource('dcamu.csv', closed=True),
-    UniverseSource('dc_tomorrowverse.csv', closed=True),
+    UniverseSource('dc_animated_tomorrowverse.csv', closed=True),
     UniverseSource('dc_animated_standalone.csv', ('Q2405799',)),
     UniverseSource('james_bond.csv', ('Q26451486',)),
     UniverseSource('superman_1978.csv', closed=True),
