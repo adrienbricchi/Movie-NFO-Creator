@@ -17,6 +17,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+from .links import with_folder_link
 from .util import print_error
 
 
@@ -44,7 +45,7 @@ class SimpleRuleRunner:
                 continue
             self.counts[rule.key] += 1
             self.examples[rule.key].append(filepath)
-            print(filepath)
+            print(with_folder_link(filepath))
             for message in messages:
                 print_error("    " + message)
 
@@ -58,7 +59,7 @@ class SimpleRuleRunner:
                 continue
             print(f"{rule.label}: {count}")
             for example_filepath in self.examples[rule.key][:5]:
-                print("    " + example_filepath)
+                print("    " + with_folder_link(example_filepath))
 
 
 class RankedRule(Rule):
@@ -85,7 +86,7 @@ class RankedRuleRunner:
 
         messages, value = result
         self.count += 1
-        print(filepath)
+        print(with_folder_link(filepath))
         for message in messages:
             print_error("    " + message)
         if value:
@@ -106,4 +107,4 @@ class RankedRuleRunner:
             print(self.rule.ranked_header)
             top_values = sorted(self.values_by_file, key=lambda entry: entry[1], reverse=True)[:5]
             for top_filepath, top_value in top_values:
-                print(f"    {self.rule.format_value(top_value)} - {top_filepath}")
+                print(f"    {self.rule.format_value(top_value)} - {with_folder_link(top_filepath)}")
