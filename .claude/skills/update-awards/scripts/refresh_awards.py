@@ -73,6 +73,8 @@ AWARD_SOURCES = [
     AwardSource('golden_globe_best_drama.csv', 'Q1011509'),
     AwardSource('golden_globe_best_musical_comedy.csv', 'Q670282'),
     AwardSource('cesar_best_foreign_film.csv', 'Q900414'),
+    AwardSource('golden_bear.csv', 'Q154590'),
+    AwardSource('golden_lion.csv', 'Q209459'),
 ]
 
 
