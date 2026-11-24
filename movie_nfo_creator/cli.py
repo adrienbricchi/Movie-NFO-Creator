@@ -26,6 +26,7 @@ from tqdm import tqdm
 from .awards import parse_awards
 from .config import load_config
 from .letterboxd import letterboxd_id_from_url, parse_letterboxd_csv, resolve_letterboxd_watched
+from .links import FileHeader, folder_uri, with_folder_link
 from .mkv import (
     extract_chapter_start_times,
     format_size_fr,
@@ -354,10 +355,11 @@ def main():
     reencode_runner = RankedRuleRunner(REENCODE_RULE)
     movie_locations = {}
     for (filepath, movie, movie_nfo_path, _), tmdb_movie, nfo_root, analysis in zip(entries, tmdb_movies, nfo_roots, analyses):
+        header = FileHeader(filepath)
 
         if nfo_root is None:
             missing_nfo_count += 1
-            print(filepath)
+            header.print()
             print("    Missing NFO")
 
         simple_rules_runner.run(filepath, analysis)
@@ -375,7 +377,7 @@ def main():
         folder = os.path.dirname(filepath)
         other_folders = movie_locations.setdefault(imdb_id, [])
         if other_folders and folder not in other_folders:
-            print(filepath)
+            header.print()
             print_error("    duplicate: same IMDb id as " + other_folders[0])
         other_folders.append(folder)
 
@@ -401,7 +403,7 @@ def main():
             continue
 
         if analysis['title_parse_error']:
-            print(filepath)
+            header.print()
             print_error("    Cannot parse NFO title")
             continue
 
@@ -409,7 +411,7 @@ def main():
             title_diff_count += 1
             title_diff_examples.append(filepath)
             diff = analysis['title_diff']
-            print(filepath)
+            header.print()
             print("    Title difference found")
             print("    NFO movie title: " + diff['nfo_title'])
             print("    TMDB movie title: " + diff['tmdb_title'])
@@ -417,6 +419,7 @@ def main():
 
         nfo_watched = analysis['nfo_watched']
         if nfo_watched and not is_watched:
+            header.print()
             print_error("    watched status mismatch")
             comma_less_title = movie[0].replace(',', '')
             ask_and_mark_watched(MOVIES_DB_PATH, movies_db, imdb_id, comma_less_title, tmdb_movie.get('id', ''))
@@ -428,9 +431,11 @@ def main():
             add_tag_to_movie_nfo(movie_nfo_path, missing_tag)
 
         for irrelevant_tag in analysis['irrelevant_tags']:
+            header.print()
             print_error("    irrelevant tag: " + irrelevant_tag)
 
         for unknown_tag in analysis['unknown_tags']:
+            header.print()
             print_error("    unknown tag: " + unknown_tag)
 
     duplicate_groups = {
@@ -446,7 +451,7 @@ def main():
         if title_diff_count:
             print("Title differences found: " + str(title_diff_count))
             for example_filepath in title_diff_examples[:5]:
-                print("    " + example_filepath)
+                print("    " + with_folder_link(example_filepath))
         if missing_nfo_count:
             print("Missing NFO files: " + str(missing_nfo_count))
         if tmdb_unmatched_count:
@@ -458,4 +463,4 @@ def main():
             for imdb_id, folders in list(duplicate_groups.items())[:5]:
                 print(f"    {imdb_id}:")
                 for folder in folders:
-                    print(f"        {folder}")
+                    print(f"        {folder}  {folder_uri(folder)}")
