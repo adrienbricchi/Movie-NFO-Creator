@@ -8,6 +8,8 @@ description: Refresh the award lookup CSVs in movie_nfo_creator/awards/ (Oscars,
 The award CSVs in `movie_nfo_creator/awards/` are refreshed from Wikidata by this skill's `scripts/refresh_awards.py`, kept out of the package on purpose.
 The script only appends films missing locally, and never removes a row: Wikidata lacks some older winners and lags on recent ceremonies, so local rows stay authoritative.
 Which CSV maps to which Wikidata award item is `AWARD_SOURCES` at the top of the script; a new CSV in `awards/` needs an entry there too (the script warns about unmapped ones).
+`scripts/fetched_years.json` holds the last ceremony year already covered per CSV: only later ceremonies are suggested, so old years are never refreshed.
+A film's ceremony year comes from Wikidata, or is estimated as its release year + 1; films with no date at all are skipped and counted.
 
 ## Steps
 
@@ -15,12 +17,14 @@ Which CSV maps to which Wikidata award item is `AWARD_SOURCES` at the top of the
    ```bash
    python3 .claude/skills/update-awards/scripts/refresh_awards.py
    ```
-   Each `+` line is a film Wikidata lists for that award but the CSV lacks, with its IMDb link.
+   Each `+` line is a film from a ceremony after the fetched year that the CSV lacks, with its ceremony year and IMDb link.
    Wikidata's query service is sometimes slow: a run takes up to a minute, and a `ReadTimeout` just needs a re-run.
 2. Vet every `+` line before writing anything: confirm the film really won (or, for the nominee list, was nominated for) that award and that the IMDb id points at the right film,
    e.g. against the award's Wikipedia list of winners. Wikidata mix-ups happen, like Other People's Money (1991) carrying the César of L'Argent des autres (1978).
 3. For each false positive, add its IMDb id to that source's `wikidata_false_positives` in the script's `AWARD_SOURCES`, with a one-line comment naming the film and the mix-up, then re-run the dry run.
-4. Show the user the vetted additions as IMDb links and get a go-ahead before writing.
+4. Check each new ceremony is complete (every winner, and every nominee for a nominee list): `--write` moves `fetched_years.json` up to the newest ceremony it adds,
+   and that year is never suggested again. Add what Wikidata lacks by hand first.
+   Show the user the vetted additions as IMDb links and get a go-ahead before writing.
 5. Apply them:
    ```bash
    python3 .claude/skills/update-awards/scripts/refresh_awards.py --write
@@ -28,6 +32,13 @@ Which CSV maps to which Wikidata award item is `AWARD_SOURCES` at the top of the
    New rows are appended at the end of each CSV, sorted by ceremony year, titled with the Wikidata original title (or French/English label).
    Fix a title by hand if it doesn't match the CSV's existing style; the title column is informational, only the IMDb id is used for tagging.
 6. Check `git diff movie_nfo_creator/awards/`. After changing the script itself, run its tests: `python3 -m unittest discover -s .claude/skills/update-awards/scripts`.
+
+## Adding a new award
+
+Wikidata's award statements are too sparse to build a full history (it had 39 of the 224 César Best Film nominees).
+Seed the CSV from the award's Wikipedia list instead: take each film's article link, resolve it to its Wikidata item (`wbgetentities` with `sites=<lang>wiki&titles=…`),
+read the item's IMDb id (`P345`), and cross-check against Wikidata's own award statements. Watch for ties and links to a non-film article (a play, a novel).
+Then add the tag to `parse_awards()` in `movie_nfo_creator/awards.py`, the source to `AWARD_SOURCES`, and its last seeded ceremony year to `fetched_years.json`.
 
 ## After a new ceremony
 
