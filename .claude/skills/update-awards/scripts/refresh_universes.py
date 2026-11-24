@@ -87,6 +87,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('dc_animated_standalone.csv', ('Q2405799',)),
     UniverseSource('james_bond.csv', ('Q26451486',)),
     UniverseSource('superman_1978.csv', closed=True),
+    UniverseSource('cornetto.csv', closed=True),
 ]
 
 
