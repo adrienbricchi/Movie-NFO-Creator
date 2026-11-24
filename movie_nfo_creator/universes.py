@@ -56,6 +56,7 @@ def parse_universes():
         ('DC Animated Tomorrowverse', 'dc_tomorrowverse.csv'),
         ('DC Animated Standalone', 'dc_animated_standalone.csv'),
         ('James Bond 007', 'james_bond.csv'),
+        ('Superman Cinematic Universe', 'superman_1978.csv'),
     ]:
         result[universe_source[0]] = parse_movie_id_csv_into_id_array(UNIVERSES_DIR / universe_source[1])
 
