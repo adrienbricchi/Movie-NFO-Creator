@@ -1,6 +1,6 @@
 ---
 name: update-awards
-description: Refresh the award lookup CSVs in movie_nfo_creator/awards/ (Oscars, César, Palme d'Or) from Wikidata, review each new film, and write the vetted additions. Use when asked to update, refresh or check the award lists, or after a new ceremony.
+description: Refresh the award lookup CSVs in movie_nfo_creator/awards/ (Oscars, César, Palme d'Or…) and the cinematic universe CSVs in movie_nfo_creator/universes/ (MCU, DCU, Star Wars…) from Wikidata, review each new film, and write the vetted additions. Use when asked to update, refresh or check the award or universe lists, after a new ceremony or a new universe film.
 ---
 
 # Update the award lists
@@ -45,5 +45,21 @@ Then add the tag to `parse_awards()` in `movie_nfo_creator/awards.py`, the sourc
 Wikidata can take weeks to record a ceremony (Oscars in March, César in February, Cannes in May).
 If a winner you know of doesn't show up as a `+` line, add the row to the CSV by hand: `Title,ttXXXXXXX`, appended at the end, no trailing newline.
 `--show-missing` lists the local rows Wikidata doesn't know about, as `?` lines; they're expected for old honorary Oscars, pre-1955 Cannes Grand Prix and recent ceremonies.
+
+## Cinematic universes
+
+The universe CSVs in `movie_nfo_creator/universes/` follow the same rules, with `scripts/refresh_universes.py`:
+```bash
+python3 .claude/skills/update-awards/scripts/refresh_universes.py
+```
+- `UNIVERSE_SOURCES` maps each CSV to the Wikidata items films link to (series, fictional universe or franchise, directly or through one sub-series).
+  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era) are updated by hand.
+- `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
+  `--write` moves it to the newest release added.
+- The lists hold theatrical and streaming feature films only. Wikidata also links shorts, TV specials, fan films and Lego specials (Star Wars),
+  and franchise items lump unrelated reboots together (every Mummy film sits in Q3823300): vet each `+` line the same way, and add false positives to `wikidata_false_positives`.
+- Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, add the tag to `parse_universes()` in
+  `movie_nfo_creator/universes.py`, the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
+- When IMDb splits a film into its original and a recut (Japanese Godzilla films and their US versions), list both ids, since TMDB may match either.
 
 Don't commit unless the user asks.

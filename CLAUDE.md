@@ -117,8 +117,11 @@ award-name → id list. For each movie, missing award tags are appended to the
 NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
 
-The CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
-whose script and tests live in the skill folder, outside the package.
+**Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…);
+both dicts are merged into one tag list in `cli.py`.
+
+The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
+whose scripts and tests live in the skill folder, outside the package.
 
 All user-facing text (NFO `<title>` content, printed diffs, award tag names) is
 in French, matching `language=fr-FR` used in the TMDb API calls — preserve this
