@@ -64,6 +64,7 @@ from .scanner import (
 )
 from .rules import RankedRule, RankedRuleRunner, SimpleRule, SimpleRuleRunner
 from .tmdb import TmdbClient
+from .universes import parse_universes
 from .util import buffered_error_count, flush_buffered_errors, print_error, start_error_buffering
 
 TMDB_FETCH_WORKERS = 8
@@ -142,7 +143,7 @@ def ensure_mediainfo(filepath, mkv_info, config):
     return mkv_info, True
 
 
-def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards, config, no_cache=False):
+def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag_lists, config, no_cache=False):
     filepath, movie, movie_nfo_path, _ = entry
 
     result = {
@@ -245,9 +246,9 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awa
     result['nfo_watched'] = nfo_watch_count is not None
 
     nfo_tags = get_movie_elements(nfo_root, "tag")
-    appropriate_award_tags = [key for key, values in awards.items() if imdb_id in values]
-    result['missing_tags'] = [tag for tag in appropriate_award_tags if tag not in nfo_tags]
-    result['irrelevant_tags'] = [tag for tag in awards.keys() if tag in nfo_tags and imdb_id not in awards[tag]]
+    appropriate_tags = [key for key, values in tag_lists.items() if imdb_id in values]
+    result['missing_tags'] = [tag for tag in appropriate_tags if tag not in nfo_tags]
+    result['irrelevant_tags'] = [tag for tag in tag_lists.keys() if tag in nfo_tags and imdb_id not in tag_lists[tag]]
 
     return result
 
@@ -278,7 +279,7 @@ def main():
 
     letterboxd_movies = parse_letterboxd_csv(config.letterboxd_watched_file)
     movies_db = load_movies_db(MOVIES_DB_PATH)
-    awards = parse_awards()
+    tag_lists = parse_awards() | parse_universes()
 
     filepaths = []
     for dir_root in config.root_dirs:
@@ -332,7 +333,7 @@ def main():
     analyses = [None] * len(entries)
     with ThreadPoolExecutor(max_workers=COMPARISON_WORKERS) as executor:
         future_to_index = {
-            executor.submit(analyze_movie, entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, awards, config, args.no_cache): index
+            executor.submit(analyze_movie, entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag_lists, config, args.no_cache): index
             for index, (entry, tmdb_movie, nfo_root) in enumerate(zip(entries, tmdb_movies, nfo_roots))
         }
         with tqdm(total=len(entries), desc="Resolving movie file data") as progress:
@@ -425,7 +426,7 @@ def main():
             add_tag_to_movie_nfo(movie_nfo_path, missing_tag)
 
         for irrelevant_tag in analysis['irrelevant_tags']:
-            print_error("    irrelevant award tag: " + irrelevant_tag)
+            print_error("    irrelevant tag: " + irrelevant_tag)
 
     duplicate_groups = {
         imdb_id: sorted(set(folders)) for imdb_id, folders in movie_locations.items() if len(set(folders)) > 1
