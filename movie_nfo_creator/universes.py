@@ -31,7 +31,7 @@ def parse_universes():
         ('DC Extended Universe', 'dceu.csv'),
         ('DC Universe', 'dcu.csv'),
         ("Sony's Spider-Man Universe", 'ssu.csv'),
-        ('X-Men (20th Century Fox)', 'xmen.csv'),
+        ('X-Men', 'xmen.csv'),
         ('MonsterVerse', 'monsterverse.csv'),
         ('Godzilla - Ère Shōwa', 'godzilla_showa.csv'),
         ('Godzilla - Ère Heisei', 'godzilla_heisei.csv'),
