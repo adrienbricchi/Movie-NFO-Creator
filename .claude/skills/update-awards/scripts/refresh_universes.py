@@ -81,6 +81,9 @@ UNIVERSE_SOURCES = [
     UniverseSource('rocky.csv', ('Q1078084',)),
     UniverseSource('cars.csv', ('Q5046850', 'Q62846448', 'Q58510929', 'Q123699295')),
     UniverseSource('despicable_me.csv', ('Q5264979', 'Q98114628', 'Q140478058')),
+    UniverseSource('dcau.csv', closed=True),
+    UniverseSource('dcamu.csv', closed=True),
+    UniverseSource('dc_tomorrowverse.csv', closed=True),
 ]
 
 
