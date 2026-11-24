@@ -68,6 +68,7 @@ AWARD_SOURCES = [
     AwardSource('cesar_best_picture.csv', 'Q645595', wikidata_false_positives=('tt0102609',)),
     AwardSource('palme_d_or.csv', 'Q179808'),
     AwardSource('cesar_best_picture_nominee.csv', 'Q645595', nominees_only=True),
+    AwardSource('goya_best_picture.csv', 'Q1467554'),
 ]
 
 
