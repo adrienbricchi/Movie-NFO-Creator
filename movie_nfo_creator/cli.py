@@ -63,6 +63,7 @@ from .scanner import (
     parse_title_and_year,
 )
 from .rules import RankedRule, RankedRuleRunner, SimpleRule, SimpleRuleRunner
+from .tags import find_tag_mismatches
 from .tmdb import TmdbClient
 from .universes import parse_universes
 from .util import buffered_error_count, flush_buffered_errors, print_error, start_error_buffering
@@ -220,6 +221,7 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
         'nfo_watched': False,
         'missing_tags': [],
         'irrelevant_tags': [],
+        'unknown_tags': [],
     })
 
     if nfo_root is None:
@@ -245,10 +247,10 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
     nfo_watch_count = get_movie_element(nfo_root, "playcount")
     result['nfo_watched'] = nfo_watch_count is not None
 
-    nfo_tags = get_movie_elements(nfo_root, "tag")
-    appropriate_tags = [key for key, values in tag_lists.items() if imdb_id in values]
-    result['missing_tags'] = [tag for tag in appropriate_tags if tag not in nfo_tags]
-    result['irrelevant_tags'] = [tag for tag in tag_lists.keys() if tag in nfo_tags and imdb_id not in tag_lists[tag]]
+    tag_mismatches = find_tag_mismatches(get_movie_elements(nfo_root, "tag"), imdb_id, tag_lists)
+    result['missing_tags'] = tag_mismatches.missing
+    result['irrelevant_tags'] = tag_mismatches.irrelevant
+    result['unknown_tags'] = tag_mismatches.unknown
 
     return result
 
@@ -427,6 +429,9 @@ def main():
 
         for irrelevant_tag in analysis['irrelevant_tags']:
             print_error("    irrelevant tag: " + irrelevant_tag)
+
+        for unknown_tag in analysis['unknown_tags']:
+            print_error("    unknown tag: " + unknown_tag)
 
     duplicate_groups = {
         imdb_id: sorted(set(folders)) for imdb_id, folders in movie_locations.items() if len(set(folders)) > 1

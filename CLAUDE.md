@@ -116,6 +116,7 @@ movie in `watched_override.csv`.
 award-name → id list. For each movie, missing award tags are appended to the
 NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
+Any other NFO tag that matches no award or universe tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
 
 **Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…);
 both dicts are merged into one tag list in `cli.py`.
