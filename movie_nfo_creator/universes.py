@@ -67,7 +67,7 @@ def parse_universes():
         ('Terminator', 'terminator.csv'),
         ('Halloween', 'halloween.csv'),
         ('Vendredi 13', 'friday_the_13th.csv'),
-        ('Les Griffes de la nuit', 'nightmare_on_elm_street.csv'),
+        ('Freddy', 'nightmare_on_elm_street.csv'),
         ('Massacre à la tronçonneuse', 'texas_chainsaw_massacre.csv'),
         ('Hellraiser', 'hellraiser.csv'),
         ('John Wick', 'john_wick.csv'),
