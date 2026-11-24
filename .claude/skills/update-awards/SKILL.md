@@ -53,10 +53,12 @@ The universe CSVs in `movie_nfo_creator/universes/` follow the same rules, with 
 python3 .claude/skills/update-awards/scripts/refresh_universes.py
 ```
 - `UNIVERSE_SOURCES` maps each CSV to the Wikidata items films link to (series, fictional universe or franchise, directly or through one sub-series).
-  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era) are updated by hand.
+  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters) are updated by hand.
 - `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
   `--write` moves it to the newest release added.
-- The lists hold theatrical and streaming feature films only. Wikidata also links shorts, TV specials, fan films and Lego specials (Star Wars),
+- Announced films that already have an IMDb id are listed ahead of release, so the tag is there as soon as the file is.
+  Drop or rename one if it is cancelled or retitled; the refresh never suggests films already in a list.
+- The lists hold theatrical and streaming feature films, plus a few specials asked for by name (the MCU shorts, the Star Wars Holiday Special). Wikidata also links shorts, TV specials, fan films and Lego specials (Star Wars),
   and franchise items lump unrelated reboots together (every Mummy film sits in Q3823300): vet each `+` line the same way, and add false positives to `wikidata_false_positives`.
 - Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, add the tag to `parse_universes()` in
   `movie_nfo_creator/universes.py`, the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
