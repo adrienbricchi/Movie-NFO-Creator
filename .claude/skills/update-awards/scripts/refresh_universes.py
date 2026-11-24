@@ -107,6 +107,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('predator.csv', ('Q2138108', 'Q2967318')),
     UniverseSource('eastrail_177.csv', closed=True),
     UniverseSource('batman_burtonverse.csv', closed=True),
+    UniverseSource('transformers.csv', ('Q2073466',)),
 ]
 
 

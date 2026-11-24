@@ -77,6 +77,7 @@ def parse_universes():
         ('Predator', 'predator.csv'),
         ('Eastrail 177', 'eastrail_177.csv'),
         ('Batman Burtonverse', 'batman_burtonverse.csv'),
+        ('Transformers', 'transformers.csv'),
     ]:
         result[universe_source[0]] = parse_movie_id_csv_into_id_array(UNIVERSES_DIR / universe_source[1])
 
