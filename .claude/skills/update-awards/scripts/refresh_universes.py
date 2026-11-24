@@ -110,6 +110,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('transformers.csv', ('Q2073466',)),
     UniverseSource('exorcist.csv', ('Q7732814',)),
     UniverseSource('evil_dead.csv', ('Q921605',)),
+    UniverseSource('mad_max.csv', ('Q3275141',)),
 ]
 
 
