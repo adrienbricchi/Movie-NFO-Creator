@@ -35,6 +35,7 @@ def parse_awards():
         ("Palme d'Or", 'palme_d_or.csv'),
         ('César du meilleur film - Nomination', 'cesar_best_picture_nominee.csv'),
         ('Goya du meilleur film', 'goya_best_picture.csv'),
+        ('BAFTA du meilleur film', 'bafta_best_film.csv'),
     ]:
         result[award_source[0]] = parse_movie_id_csv_into_id_array(AWARDS_DIR / award_source[1])
 
