@@ -79,6 +79,7 @@ def parse_universes():
         ('Miyagi-verse', 'miyagiverse.csv'),
         ('Moi, moche et méchant', 'despicable_me.csv'),
         ('MonsterVerse', 'monsterverse.csv'),
+        ('Mortal Kombat', 'mortal_kombat.csv'),
         ('OSS 117', 'oss_117.csv'),
         ('Pirates des Caraïbes', 'pirates_of_the_caribbean.csv'),
         ('Predator', 'predator.csv'),

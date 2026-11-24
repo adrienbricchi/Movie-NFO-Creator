@@ -113,6 +113,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('mission_impossible.csv', ('Q1356213',)),
     UniverseSource('miyagiverse.csv', ('Q3987783',)),
     UniverseSource('monsterverse.csv', ('Q21527684',)),
+    UniverseSource('mortal_kombat.csv', ('Q106603131',)),
     UniverseSource('nightmare_on_elm_street.csv', ('Q617871', 'Q329434')),
     UniverseSource('oss_117.csv', ('Q2008180',)),
     UniverseSource('pirates_of_the_caribbean.csv', ('Q194318',)),
