@@ -78,6 +78,8 @@ def parse_universes():
         ('Eastrail 177', 'eastrail_177.csv'),
         ('Batman Burtonverse', 'batman_burtonverse.csv'),
         ('Transformers', 'transformers.csv'),
+        ("L'Exorciste", 'exorcist.csv'),
+        ('Evil Dead', 'evil_dead.csv'),
     ]:
         result[universe_source[0]] = parse_movie_id_csv_into_id_array(UNIVERSES_DIR / universe_source[1])
 
