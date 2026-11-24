@@ -17,6 +17,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from .csv_utils import parse_movie_id_csv_into_id_array
@@ -24,16 +25,25 @@ from .csv_utils import parse_movie_id_csv_into_id_array
 AWARDS_DIR = Path(__file__).parent / 'awards'
 
 
-def parse_awards():
-    result = {}
-    for award_source in [
-        ('Oscar du meilleur film', 'oscar_best_picture.csv'),
-        ('Oscar du meilleur film - Nomination', 'oscar_best_picture_nominee.csv'),
-        ('Oscar du meilleur film international', 'oscar_best_international_picture.csv'),
-        ("Oscar du meilleur film d'animation", 'oscar_best_animated_picture.csv'),
-        ('César du meilleur film', 'cesar_best_picture.csv'),
-        ("Palme d'Or", 'palme_d_or.csv'),
-    ]:
-        result[award_source[0]] = parse_movie_id_csv_into_id_array(AWARDS_DIR / award_source[1])
+@dataclass(frozen=True)
+class AwardSource:
+    tag: str
+    filename: str
+    wikidata_award: str
+    nominees_only: bool = False
+    wikidata_false_positives: tuple = ()
 
-    return result
+
+AWARD_SOURCES = [
+    AwardSource('Oscar du meilleur film', 'oscar_best_picture.csv', 'Q102427'),
+    AwardSource('Oscar du meilleur film - Nomination', 'oscar_best_picture_nominee.csv', 'Q102427', nominees_only=True),
+    AwardSource('Oscar du meilleur film international', 'oscar_best_international_picture.csv', 'Q105304'),
+    AwardSource("Oscar du meilleur film d'animation", 'oscar_best_animated_picture.csv', 'Q106800'),
+    # tt0102609 is Other People's Money (1991), mixed up on Wikidata with L'Argent des autres (1978).
+    AwardSource('César du meilleur film', 'cesar_best_picture.csv', 'Q645595', wikidata_false_positives=('tt0102609',)),
+    AwardSource("Palme d'Or", 'palme_d_or.csv', 'Q179808'),
+]
+
+
+def parse_awards():
+    return {source.tag: parse_movie_id_csv_into_id_array(AWARDS_DIR / source.filename) for source in AWARD_SOURCES}
