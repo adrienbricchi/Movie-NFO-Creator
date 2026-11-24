@@ -38,6 +38,7 @@ def parse_awards():
         ('BAFTA du meilleur film', 'bafta_best_film.csv'),
         ('Golden Globe du meilleur film dramatique', 'golden_globe_best_drama.csv'),
         ('Golden Globe du meilleur film musical ou comédie', 'golden_globe_best_musical_comedy.csv'),
+        ('César du meilleur film étranger', 'cesar_best_foreign_film.csv'),
     ]:
         result[award_source[0]] = parse_movie_id_csv_into_id_array(AWARDS_DIR / award_source[1])
 
