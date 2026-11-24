@@ -67,6 +67,14 @@ AWARD_SOURCES = [
     # tt0102609 is Other People's Money (1991), mixed up on Wikidata with L'Argent des autres (1978).
     AwardSource('cesar_best_picture.csv', 'Q645595', wikidata_false_positives=('tt0102609',)),
     AwardSource('palme_d_or.csv', 'Q179808'),
+    AwardSource('cesar_best_picture_nominee.csv', 'Q645595', nominees_only=True),
+    AwardSource('goya_best_picture.csv', 'Q1467554'),
+    AwardSource('bafta_best_film.csv', 'Q139184'),
+    AwardSource('golden_globe_best_drama.csv', 'Q1011509'),
+    AwardSource('golden_globe_best_musical_comedy.csv', 'Q670282'),
+    AwardSource('cesar_best_foreign_film.csv', 'Q900414'),
+    AwardSource('golden_bear.csv', 'Q154590'),
+    AwardSource('golden_lion.csv', 'Q209459'),
 ]
 
 
