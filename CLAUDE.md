@@ -124,6 +124,9 @@ Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_n
 which also hold the studio and theme lists (Pixar, Ghibli, Walt Disney Animation Studios, Disney attraction adaptations);
 both dicts are merged into one tag list in `cli.py`.
 
+**Character tagging**: `parse_characters` loads the CSVs in `movie_nfo_creator/characters/` (Batman, Dracula, Godzilla…) into the same tag list.
+A character list holds the films the character appears in, whatever the saga, and is updated by hand.
+
 The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
 whose scripts and tests live in the skill folder, outside the package.
 

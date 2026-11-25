@@ -24,6 +24,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 from .awards import parse_awards
+from .characters import parse_characters
 from .config import load_config
 from .letterboxd import letterboxd_id_from_url, parse_letterboxd_csv, resolve_letterboxd_watched
 from .links import FileHeader, folder_uri, with_folder_link
@@ -285,7 +286,7 @@ def main():
 
     letterboxd_movies = parse_letterboxd_csv(config.letterboxd_watched_file)
     movies_db = load_movies_db(MOVIES_DB_PATH)
-    tag_lists = parse_awards() | parse_universes()
+    tag_lists = parse_awards() | parse_universes() | parse_characters()
 
     filepaths = []
     for dir_root in config.root_dirs:
