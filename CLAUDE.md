@@ -121,7 +121,7 @@ The subfolders only sort the lists:
 - `awards/` — one list per award, keyed to a French-language award-name tag.
 - `studios/` — a studio's films (Pixar, Ghibli, Walt Disney Animation Studios, Hammer Horror, Universal Monsters).
 - `universes/` — cinematic universes (MCU, Star Wars, Godzilla eras…) and theme lists (Disney attraction adaptations).
-- `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand.
+- `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand, Rambo excepted.
 
 The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
 whose scripts and tests live in the skill folder, outside the package.

@@ -57,6 +57,7 @@ python3 .claude/skills/update-awards/scripts/refresh_universes.py
 - The studio lists live in `movie_nfo_creator/tag_lists/studios/`, with `folder='studios'` on their source. Walt Disney Animation Studios is refreshed like a universe,
   Hammer Horror and the Universal Monsters classic era are closed, and the Universal Monsters modern era is updated by hand.
   Pixar and Ghibli have no source and are updated by hand too, since films link to them as a production company.
+- The character lists live in `movie_nfo_creator/tag_lists/characters/` and are updated by hand, except Rambo, refreshed like a universe (`folder='characters'`).
 - `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
   `--write` moves it to the newest release added.
 - Announced films that already have an IMDb id are listed ahead of release, so the tag is there as soon as the file is.

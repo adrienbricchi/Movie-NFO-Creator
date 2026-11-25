@@ -125,7 +125,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('pirates_of_the_caribbean.csv', ('Q194318',)),
     UniverseSource('planet_of_the_apes.csv', ('Q731663',)),
     UniverseSource('predator.csv', ('Q2138108', 'Q2967318')),
-    UniverseSource('rambo.csv', ('Q1621266',)),
+    UniverseSource('rambo.csv', ('Q1621266',), folder='characters'),
     UniverseSource('resident_evil.csv', ('Q1276325',)),
     UniverseSource('rocky.csv', ('Q1078084',)),
     UniverseSource('romero_dead.csv', ('Q2652860',)),
