@@ -84,6 +84,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('despicable_me.csv', ('Q5264979', 'Q98114628', 'Q140478058')),
     UniverseSource('die_hard.csv', ('Q2716420',)),
     UniverseSource('disney_attractions.csv'),
+    UniverseSource('disney_live_action.csv'),
     UniverseSource('dollars.csv', closed=True),
     UniverseSource('eastrail_177.csv', closed=True),
     UniverseSource('evil_dead.csv', ('Q921605',)),
