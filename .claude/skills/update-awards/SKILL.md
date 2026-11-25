@@ -54,8 +54,9 @@ python3 .claude/skills/update-awards/scripts/refresh_universes.py
 ```
 - `UNIVERSE_SOURCES` maps each CSV to the Wikidata items films link to (series, fictional universe or franchise, directly or through one sub-series).
   `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters, Millenium, the Disney attraction adaptations) are updated by hand.
-- The studio lists live in `movie_nfo_creator/tag_lists/studios/`. Walt Disney Animation Studios is refreshed like a universe (`folder='studios'` on its source);
-  Pixar and Ghibli are updated by hand, since films link to them as a production company.
+- The studio lists live in `movie_nfo_creator/tag_lists/studios/`, with `folder='studios'` on their source. Walt Disney Animation Studios is refreshed like a universe,
+  Hammer Horror and the Universal Monsters classic era are closed, and the Universal Monsters modern era is updated by hand.
+  Pixar and Ghibli have no source and are updated by hand too, since films link to them as a production company.
 - `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
   `--write` moves it to the newest release added.
 - Announced films that already have an IMDb id are listed ahead of release, so the tag is there as soon as the file is.

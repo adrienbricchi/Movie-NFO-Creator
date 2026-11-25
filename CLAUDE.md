@@ -119,7 +119,7 @@ Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_n
 
 The subfolders only sort the lists:
 - `awards/` — one list per award, keyed to a French-language award-name tag.
-- `studios/` — a studio's films (Pixar, Ghibli, Walt Disney Animation Studios).
+- `studios/` — a studio's films (Pixar, Ghibli, Walt Disney Animation Studios, Hammer Horror, Universal Monsters).
 - `universes/` — cinematic universes (MCU, Star Wars, Godzilla eras…) and theme lists (Disney attraction adaptations).
 - `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand.
 
