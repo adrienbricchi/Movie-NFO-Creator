@@ -27,7 +27,6 @@ UNIVERSES_DIR = Path(__file__).parent / 'universes'
 def parse_universes():
     result = {}
     for universe_source in [
-        ("Adaptations d'attractions Disney", 'disney_attractions.csv'),
         ('Alien', 'alien.csv'),
         ('Astérix', 'asterix.csv'),
         ('Batman Burtonverse', 'batman_burtonverse.csv'),
@@ -49,6 +48,7 @@ def parse_universes():
         ('Eastrail 177', 'eastrail_177.csv'),
         ('Evil Dead', 'evil_dead.csv'),
         ('Fast and Furious', 'fast_and_furious.csv'),
+        ('Film adaptations of Disney attractions', 'disney_attractions.csv'),
         ('Freddy', 'nightmare_on_elm_street.csv'),
         ('Ghibli', 'ghibli.csv'),
         ('Godzilla - Heisei era', 'godzilla_heisei.csv'),
