@@ -21,12 +21,36 @@ from pathlib import Path
 
 from .csv_utils import parse_movie_id_csv_into_id_array
 
-UNIVERSES_DIR = Path(__file__).parent / 'universes'
+TAG_LISTS_DIR = Path(__file__).parent
 
-
-def parse_universes():
-    result = {}
-    for universe_source in [
+TAG_SOURCES = {
+    'awards': [
+        ('Oscar du meilleur film', 'oscar_best_picture.csv'),
+        ('Oscar du meilleur film - Nomination', 'oscar_best_picture_nominee.csv'),
+        ('Oscar du meilleur film international', 'oscar_best_international_picture.csv'),
+        ("Oscar du meilleur film d'animation", 'oscar_best_animated_picture.csv'),
+        ('César du meilleur film', 'cesar_best_picture.csv'),
+        ("Palme d'Or", 'palme_d_or.csv'),
+        ('César du meilleur film - Nomination', 'cesar_best_picture_nominee.csv'),
+        ('Goya du meilleur film', 'goya_best_picture.csv'),
+        ('BAFTA du meilleur film', 'bafta_best_film.csv'),
+        ('Golden Globe du meilleur film dramatique', 'golden_globe_best_drama.csv'),
+        ('Golden Globe du meilleur film musical ou comédie', 'golden_globe_best_musical_comedy.csv'),
+        ('César du meilleur film étranger', 'cesar_best_foreign_film.csv'),
+        ("Ours d'or", 'golden_bear.csv'),
+        ("Lion d'or", 'golden_lion.csv'),
+    ],
+    'characters': [
+        ('Batman', 'batman.csv'),
+        ('Dracula', 'dracula.csv'),
+        ('Frankenstein', 'frankenstein.csv'),
+        ('Godzilla', 'godzilla.csv'),
+        ('King Kong', 'king_kong.csv'),
+        ('Spider-Man', 'spider_man.csv'),
+        ('Superman', 'superman.csv'),
+        ('Tarzan', 'tarzan.csv'),
+    ],
+    'universes': [
         ('Alien', 'alien.csv'),
         ('Astérix', 'asterix.csv'),
         ('Batman Burtonverse', 'batman_burtonverse.csv'),
@@ -120,7 +144,13 @@ def parse_universes():
         ('Wizarding World', 'wizarding_world.csv'),
         ('X', 'x.csv'),
         ('X-Men', 'xmen.csv'),
-    ]:
-        result[universe_source[0]] = parse_movie_id_csv_into_id_array(UNIVERSES_DIR / universe_source[1])
+    ],
+}
 
-    return result
+
+def parse_tag_lists():
+    return {
+        tag: parse_movie_id_csv_into_id_array(TAG_LISTS_DIR / folder / filename)
+        for folder, sources in TAG_SOURCES.items()
+        for tag, filename in sources
+    }
