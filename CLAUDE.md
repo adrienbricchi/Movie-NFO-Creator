@@ -72,8 +72,7 @@ it calls into for each concern:
   of as a module global.
 - `nfo.py` — all `movie.nfo` read/write logic.
 - `letterboxd.py` — parses the Letterboxd watched-history export.
-- `tag_lists.py` / `csv_utils.py` — the automatic tag lists (bundled package data under `movie_nfo_creator/tag_lists/`,
-  resolved via `Path(__file__).parent`, not cwd-relative) and generic title/imdb_id CSV parsing shared with `watched_override.csv`.
+- `tag_lists.py` — the automatic tag lists (bundled package data under `movie_nfo_creator/tag_lists/`, resolved via `Path(__file__).parent`, not cwd-relative).
 - `mkv.py` — inspection of each `.mkv`'s inner tracks via the MKVToolNix CLI
   (`mkvmerge`/`mkvextract`, must be in `PATH` or `[tracks] mkvtoolnix_dir`).
 - `mkv_cache.py` — 1-day cache (same TTL as `tmdb.py`'s HTTP cache) for
@@ -110,14 +109,15 @@ watched status, the script either patches the NFO in (`add_playcount_to_nfo`)
 or, on a mismatch the other direction, interactively offers to record the
 movie in `watched_override.csv`.
 
-**Automatic tagging**: `parse_tag_lists` (`tag_lists.py`) loads every CSV listed in `movie_nfo_creator/tag_lists/tags.csv` (one IMDb id per line) into a single dict of tag → id list.
-`tags.csv` is the index, one `tag,csv_path` row per list, and the code knows nothing about what a list is; adding one is a CSV and a row there.
+**Automatic tagging**: `parse_tag_lists` (`tag_lists.py`) loads every `movie_nfo_creator/tag_lists/**/*.csv` into a single dict of tag → id list.
+A list CSV starts with its tag name on the first line, then the `original_title,imdb_id` header and one film per line.
+The code knows nothing about what a list is, and adding one is dropping a CSV there, in any subfolder.
 For each movie, missing tags are appended to the NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
 Any other NFO tag that matches no automatic tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
 Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_nfo`), and an automatic tag listed there is never added.
 
-The lists are sorted into subfolders of `tag_lists/`:
+The subfolders only sort the lists:
 - `awards/` — one list per award, keyed to a French-language award-name tag.
 - `universes/` — cinematic universes (MCU, Star Wars, Godzilla eras…), plus the studio and theme lists (Pixar, Ghibli, Walt Disney Animation Studios, Disney attraction adaptations).
 - `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand.

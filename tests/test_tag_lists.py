@@ -19,20 +19,21 @@
 
 import unittest
 
-from movie_nfo_creator.tag_lists import TAG_INDEX_PATH, TAG_LISTS_DIR, parse_tag_lists, read_tag_index
+from movie_nfo_creator.tag_lists import TAG_LISTS_DIR, parse_tag_lists, read_tag_list
 
 
-class TagIndexTest(unittest.TestCase):
+class TagListsTest(unittest.TestCase):
 
-    def test_every_csv_is_indexed_once(self):
-        csv_paths = sorted(path.relative_to(TAG_LISTS_DIR).as_posix() for path in TAG_LISTS_DIR.rglob('*.csv') if path != TAG_INDEX_PATH)
+    def test_every_csv_declares_a_tag_and_the_header(self):
+        for csv_path in TAG_LISTS_DIR.rglob('*.csv'):
+            lines = csv_path.read_text(encoding='utf-8').splitlines()
+            self.assertTrue(lines[0].strip(), csv_path)
+            self.assertEqual('original_title,imdb_id', lines[1], csv_path)
 
-        self.assertEqual(csv_paths, sorted(csv_path for _, csv_path in read_tag_index()))
+    def test_every_csv_is_loaded_under_its_own_tag(self):
+        csv_paths = list(TAG_LISTS_DIR.rglob('*.csv'))
 
-    def test_tag_names_are_unique(self):
-        tags = [tag for tag, _ in read_tag_index()]
-
-        self.assertEqual(len(tags), len(set(tags)))
+        self.assertEqual(sorted(read_tag_list(csv_path)[0] for csv_path in csv_paths), sorted(parse_tag_lists()))
 
     def test_every_list_holds_imdb_ids(self):
         for tag, imdb_ids in parse_tag_lists().items():

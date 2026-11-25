@@ -38,7 +38,7 @@ A film's ceremony year comes from Wikidata, or is estimated as its release year 
 Wikidata's award statements are too sparse to build a full history (it had 39 of the 224 César Best Film nominees).
 Seed the CSV from the award's Wikipedia list instead: take each film's article link, resolve it to its Wikidata item (`wbgetentities` with `sites=<lang>wiki&titles=…`),
 read the item's IMDb id (`P345`), and cross-check against Wikidata's own award statements. Watch for ties and links to a non-film article (a play, a novel).
-Then add the tag and its CSV path to `movie_nfo_creator/tag_lists/tags.csv`, the source to `AWARD_SOURCES`, and its last seeded ceremony year to `fetched_years.json`.
+The CSV's first line is the tag name, before the `original_title,imdb_id` header; then add the source to `AWARD_SOURCES`, and its last seeded ceremony year to `fetched_years.json`.
 
 ## After a new ceremony
 
@@ -61,8 +61,8 @@ python3 .claude/skills/update-awards/scripts/refresh_universes.py
   Drop or rename one if it is cancelled or retitled; the refresh never suggests films already in a list.
 - The lists hold theatrical and streaming feature films, plus a few specials asked for by name (the MCU shorts, the Star Wars Holiday Special). Wikidata also links shorts, TV specials, fan films and Lego specials (Star Wars),
   and franchise items lump unrelated reboots together (every Mummy film sits in Q3823300): vet each `+` line the same way, and add false positives to `wikidata_false_positives`.
-- Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, add the tag and
-  its CSV path to `movie_nfo_creator/tag_lists/tags.csv`, the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
+- Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, put the tag name on
+  the CSV's first line, add the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
 - When IMDb splits a film into its original and a recut (Japanese Godzilla films and their US versions), list both ids, since TMDB may match either.
 
 Don't commit unless the user asks.

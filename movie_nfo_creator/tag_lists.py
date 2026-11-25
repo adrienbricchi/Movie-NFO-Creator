@@ -20,18 +20,22 @@
 import csv
 from pathlib import Path
 
-from .csv_utils import parse_movie_id_csv_into_id_array
-
 TAG_LISTS_DIR = Path(__file__).parent / 'tag_lists'
-TAG_INDEX_PATH = TAG_LISTS_DIR / 'tags.csv'
 
 
-def read_tag_index():
-    with open(TAG_INDEX_PATH, 'r', encoding='utf-8') as f:
+def read_tag_list(csv_path):
+    with open(csv_path, 'r', encoding='utf-8') as f:
+        tag = f.readline().strip()
         reader = csv.reader(f)
         next(reader, None)  # Skip header
-        return [(tag, csv_path) for tag, csv_path in reader]
+        return tag, [imdb_id for _, imdb_id in reader]
 
 
 def parse_tag_lists():
-    return {tag: parse_movie_id_csv_into_id_array(TAG_LISTS_DIR / csv_path) for tag, csv_path in read_tag_index()}
+    result = {}
+    for csv_path in sorted(TAG_LISTS_DIR.rglob('*.csv')):
+        tag, imdb_ids = read_tag_list(csv_path)
+        if tag in result:
+            raise ValueError(f"Tag {tag} is declared twice, second time in {csv_path}")
+        result[tag] = imdb_ids
+    return result

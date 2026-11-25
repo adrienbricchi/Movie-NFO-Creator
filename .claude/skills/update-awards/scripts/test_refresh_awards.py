@@ -173,10 +173,12 @@ class CsvRoundTripTest(unittest.TestCase):
         rows = [('Plain', 'tt0000001'), ('Comma, Title', 'tt0000002')]
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'award.csv'
+            path.write_text("Palme d'Or\noriginal_title,imdb_id", encoding='utf-8')
 
             write_rows(path, rows)
 
             self.assertEqual(rows, read_rows(path))
+            self.assertTrue(path.read_text(encoding='utf-8').startswith("Palme d'Or\noriginal_title,imdb_id\n"))
             self.assertFalse(path.read_text(encoding='utf-8').endswith('\n'))
 
 
