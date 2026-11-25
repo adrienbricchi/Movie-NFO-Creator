@@ -56,5 +56,35 @@ class FindTagMismatchesTest(unittest.TestCase):
         self.assertEqual(([], [], []), (mismatches.missing, mismatches.irrelevant, mismatches.unknown))
 
 
+class TagsToRemoveTest(unittest.TestCase):
+
+    def test_listed_tag_is_removable_and_not_unknown(self):
+        mismatches = find_tag_mismatches(['Star Wars', 'Vu au cinéma'], 'tt0000002', TAG_LISTS, ['Vu au cinéma'])
+
+        self.assertEqual(['Vu au cinéma'], mismatches.removable)
+        self.assertEqual([], mismatches.unknown)
+
+    def test_match_is_case_sensitive(self):
+        mismatches = find_tag_mismatches(['vu au cinéma'], 'tt0000009', TAG_LISTS, ['Vu au cinéma'])
+
+        self.assertEqual([], mismatches.removable)
+        self.assertEqual(['vu au cinéma'], mismatches.unknown)
+
+    def test_listed_automatic_tag_is_removed_and_never_added(self):
+        present = find_tag_mismatches(['Star Wars'], 'tt0000002', TAG_LISTS, ['Star Wars'])
+        absent = find_tag_mismatches([], 'tt0000002', TAG_LISTS, ['Star Wars'])
+
+        self.assertEqual((['Star Wars'], []), (present.removable, present.missing))
+        self.assertEqual(([], []), (absent.removable, absent.missing))
+
+    def test_duplicated_tag_is_reported_once(self):
+        mismatches = find_tag_mismatches(['Vu au cinéma', 'Vu au cinéma'], 'tt0000009', TAG_LISTS, ['Vu au cinéma'])
+
+        self.assertEqual(['Vu au cinéma'], mismatches.removable)
+
+    def test_nothing_removable_by_default(self):
+        self.assertEqual([], find_tag_mismatches(['Star Wars'], 'tt0000002', TAG_LISTS).removable)
+
+
 if __name__ == '__main__':
     unittest.main()

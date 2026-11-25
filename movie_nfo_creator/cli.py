@@ -52,6 +52,7 @@ from .nfo import (
     get_movie_elements,
     parse_movie_nfo_imdb,
     parse_movie_nfo_xml,
+    remove_tag_from_movie_nfo,
     prompt_create_movie_nfo,
 )
 from .scanner import (
@@ -223,6 +224,7 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
         'missing_tags': [],
         'irrelevant_tags': [],
         'unknown_tags': [],
+        'removable_tags': [],
     })
 
     if nfo_root is None:
@@ -248,10 +250,11 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
     nfo_watch_count = get_movie_element(nfo_root, "playcount")
     result['nfo_watched'] = nfo_watch_count is not None
 
-    tag_mismatches = find_tag_mismatches(get_movie_elements(nfo_root, "tag"), imdb_id, tag_lists)
+    tag_mismatches = find_tag_mismatches(get_movie_elements(nfo_root, "tag"), imdb_id, tag_lists, config.tags_to_remove)
     result['missing_tags'] = tag_mismatches.missing
     result['irrelevant_tags'] = tag_mismatches.irrelevant
     result['unknown_tags'] = tag_mismatches.unknown
+    result['removable_tags'] = tag_mismatches.removable
 
     return result
 
@@ -426,6 +429,9 @@ def main():
 
         if is_watched and not nfo_watched:
             add_playcount_to_nfo(movie_nfo_path)
+
+        for removable_tag in analysis['removable_tags']:
+            remove_tag_from_movie_nfo(movie_nfo_path, removable_tag)
 
         for missing_tag in analysis['missing_tags']:
             add_tag_to_movie_nfo(movie_nfo_path, missing_tag)

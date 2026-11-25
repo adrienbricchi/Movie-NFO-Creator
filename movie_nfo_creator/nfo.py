@@ -187,6 +187,43 @@ def add_tag_to_movie_nfo(nfo_path, tag_value):
         return False
 
 
+def remove_tag_from_movie_nfo(nfo_path, tag_value):
+    try:
+        with open(nfo_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+
+        if len(lines) < 2:
+            print_error(f"NFO file too short: {nfo_path}")
+            return False
+
+        xml_content = ''.join(lines[:-1])
+        imdb_link = lines[-1].rstrip('\n')
+
+        root = ET.fromstring(xml_content)
+        if root.tag != 'movie':
+            print_error(f"Root tag is not <movie> in {nfo_path}")
+            return False
+
+        matching_elements = [element for element in root.findall('tag') if element.text and element.text.strip() == tag_value]
+        if not matching_elements:
+            return False
+        for element in matching_elements:
+            root.remove(element)
+
+        indent_xml(root)
+
+        with open(nfo_path, 'w', encoding='utf-8') as f:
+            ET.ElementTree(root).write(f, encoding='unicode', xml_declaration=True)
+            f.write('\n' + imdb_link.strip() + '\n')
+
+        print(f"Tag <tag>{tag_value}</tag> removed and file updated: {nfo_path}")
+        return True
+
+    except Exception as e:
+        print_error(f"Error updating NFO {nfo_path}: {e}")
+        return False
+
+
 def add_playcount_to_nfo(nfo_path):
     try:
         with open(nfo_path, 'r', encoding='utf-8') as f:

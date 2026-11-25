@@ -42,6 +42,7 @@ Before running, copy `config.ini.dist` to `config.ini` and fill in:
   it provides are just unavailable, everything else still runs. Only set
   and misconfigured is treated as an error worth printing, since then the
   absence is unintentional.
+- `[tags] remove` — optional, empty by default. Tags (`;`-separated) pruned from every NFO, on an exact case-sensitive match.
 
 `config.ini` and `watched.csv` are gitignored (personal/secret data);
 `config.ini.dist` is the template committed to the repo.
@@ -117,6 +118,7 @@ award-name → id list. For each movie, missing award tags are appended to the
 NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
 Any other NFO tag that matches no award or universe tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
+Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_nfo`), and an automatic tag listed there is never added.
 
 **Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…);
 both dicts are merged into one tag list in `cli.py`.
