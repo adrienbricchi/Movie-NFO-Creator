@@ -28,7 +28,8 @@ import requests
 
 from refresh_awards import IMDB_URL, USER_AGENT, WIKIDATA_SPARQL_URL, read_rows, unmapped_csv_files, write_rows
 
-UNIVERSES_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists' / 'universes'
+TAG_LISTS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists'
+UNIVERSES_DIR = TAG_LISTS_DIR / 'universes'
 FETCHED_DATES_PATH = Path(__file__).resolve().parent / 'universe_fetched_dates.json'
 
 QUERY_TEMPLATE = '''
@@ -54,6 +55,7 @@ class UniverseSource:
     wikidata_items: tuple = ()
     closed: bool = False
     wikidata_false_positives: tuple = ()
+    folder: str = 'universes'
 
 
 UNIVERSE_SOURCES = [
@@ -89,7 +91,6 @@ UNIVERSE_SOURCES = [
     UniverseSource('final_destination.csv', ('Q223261',)),
     UniverseSource('friday_the_13th.csv', ('Q1138878',)),
     UniverseSource('ghostbusters.csv'),
-    UniverseSource('ghibli.csv'),
     UniverseSource('godzilla_heisei.csv', closed=True),
     UniverseSource('godzilla_millennium.csv', closed=True),
     UniverseSource('godzilla_reiwa.csv'),
@@ -122,7 +123,6 @@ UNIVERSE_SOURCES = [
     UniverseSource('oceans.csv', ('Q4463076',)),
     UniverseSource('oss_117.csv', ('Q2008180',)),
     UniverseSource('pirates_of_the_caribbean.csv', ('Q194318',)),
-    UniverseSource('pixar.csv'),
     UniverseSource('planet_of_the_apes.csv', ('Q731663',)),
     UniverseSource('predator.csv', ('Q2138108', 'Q2967318')),
     UniverseSource('rambo.csv', ('Q1621266',)),
@@ -146,7 +146,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('universal_monsters_classic.csv', closed=True),
     UniverseSource('universal_monsters_modern.csv'),
     UniverseSource('vengeance.csv', closed=True),
-    UniverseSource('walt_disney_animation_studios.csv', ('Q56070713',)),
+    UniverseSource('walt_disney_animation_studios.csv', ('Q56070713',), folder='studios'),
     UniverseSource('wizarding_world.csv', ('Q216930', 'Q27922181', 'Q30739117')),
     UniverseSource('x.csv', ('Q114451788',)),
     UniverseSource('xmen.csv', ('Q2006869',), closed=True),
@@ -255,7 +255,7 @@ def main(argv=None, today=None):
             print(f"{source.filename}: no Wikidata item, update by hand")
             continue
 
-        csv_path = UNIVERSES_DIR / source.filename
+        csv_path = TAG_LISTS_DIR / source.folder / source.filename
         fetched_until = fetched_dates.get(source.filename, '0000-00-00')
         result = merge_rows(read_rows(csv_path), fetch_wikidata_films(source), fetched_until, today, source.wikidata_false_positives)
         total_added += len(result.added)
