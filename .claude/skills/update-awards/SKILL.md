@@ -53,7 +53,8 @@ The universe CSVs in `movie_nfo_creator/universes/` follow the same rules, with 
 python3 .claude/skills/update-awards/scripts/refresh_universes.py
 ```
 - `UNIVERSE_SOURCES` maps each CSV to the Wikidata items films link to (series, fictional universe or franchise, directly or through one sub-series).
-  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters) are updated by hand.
+  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters, Millenium, the Disney attraction adaptations) are updated by hand,
+  as are the studio lists (Pixar, Ghibli), which films link to as a production company.
 - `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
   `--write` moves it to the newest release added.
 - Announced films that already have an IMDb id are listed ahead of release, so the tag is there as soon as the file is.
