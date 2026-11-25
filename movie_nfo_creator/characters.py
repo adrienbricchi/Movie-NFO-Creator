@@ -31,6 +31,7 @@ def parse_characters():
         ('Dracula', 'dracula.csv'),
         ('Frankenstein', 'frankenstein.csv'),
         ('Godzilla', 'godzilla.csv'),
+        ('King Kong', 'king_kong.csv'),
         ('Spider-Man', 'spider_man.csv'),
         ('Superman', 'superman.csv'),
         ('Tarzan', 'tarzan.csv'),
