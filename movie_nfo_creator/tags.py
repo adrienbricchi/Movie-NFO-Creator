@@ -25,13 +25,17 @@ class TagMismatches:
     missing: list
     irrelevant: list
     unknown: list
+    removable: list
 
 
-def find_tag_mismatches(nfo_tags, imdb_id, tag_lists):
-    nfo_tags = nfo_tags or []
+def find_tag_mismatches(nfo_tags, imdb_id, tag_lists, tags_to_remove=()):
+    removable = [tag for tag in dict.fromkeys(nfo_tags or []) if tag in tags_to_remove]
+    nfo_tags = [tag for tag in nfo_tags or [] if tag not in tags_to_remove]
+    tag_lists = {tag: imdb_ids for tag, imdb_ids in tag_lists.items() if tag not in tags_to_remove}
     appropriate_tags = [tag for tag, imdb_ids in tag_lists.items() if imdb_id in imdb_ids]
     return TagMismatches(
         missing=[tag for tag in appropriate_tags if tag not in nfo_tags],
         irrelevant=[tag for tag in tag_lists if tag in nfo_tags and imdb_id not in tag_lists[tag]],
         unknown=[tag for tag in nfo_tags if tag not in tag_lists],
+        removable=removable,
     )
