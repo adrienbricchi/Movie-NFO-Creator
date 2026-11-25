@@ -71,6 +71,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('cars.csv', ('Q5046850', 'Q62846448', 'Q58510929', 'Q123699295')),
     UniverseSource('chucky.csv', ('Q2265493',)),
     UniverseSource('cloverfield.csv', ('Q25136301',)),
+    UniverseSource('conan.csv'),
     UniverseSource('conjuring.csv', ('Q25339704',)),
     UniverseSource('cornetto.csv', closed=True),
     UniverseSource('dc_animated_standalone.csv', ('Q2405799',)),
