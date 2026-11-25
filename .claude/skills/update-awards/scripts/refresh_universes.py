@@ -28,7 +28,7 @@ import requests
 
 from refresh_awards import IMDB_URL, USER_AGENT, WIKIDATA_SPARQL_URL, read_rows, unmapped_csv_files, write_rows
 
-UNIVERSES_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'universes'
+UNIVERSES_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists' / 'universes'
 FETCHED_DATES_PATH = Path(__file__).resolve().parent / 'universe_fetched_dates.json'
 
 QUERY_TEMPLATE = '''

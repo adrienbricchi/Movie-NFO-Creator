@@ -17,140 +17,21 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 
+import csv
 from pathlib import Path
 
 from .csv_utils import parse_movie_id_csv_into_id_array
 
-TAG_LISTS_DIR = Path(__file__).parent
+TAG_LISTS_DIR = Path(__file__).parent / 'tag_lists'
+TAG_INDEX_PATH = TAG_LISTS_DIR / 'tags.csv'
 
-TAG_SOURCES = {
-    'awards': [
-        ('Oscar du meilleur film', 'oscar_best_picture.csv'),
-        ('Oscar du meilleur film - Nomination', 'oscar_best_picture_nominee.csv'),
-        ('Oscar du meilleur film international', 'oscar_best_international_picture.csv'),
-        ("Oscar du meilleur film d'animation", 'oscar_best_animated_picture.csv'),
-        ('César du meilleur film', 'cesar_best_picture.csv'),
-        ("Palme d'Or", 'palme_d_or.csv'),
-        ('César du meilleur film - Nomination', 'cesar_best_picture_nominee.csv'),
-        ('Goya du meilleur film', 'goya_best_picture.csv'),
-        ('BAFTA du meilleur film', 'bafta_best_film.csv'),
-        ('Golden Globe du meilleur film dramatique', 'golden_globe_best_drama.csv'),
-        ('Golden Globe du meilleur film musical ou comédie', 'golden_globe_best_musical_comedy.csv'),
-        ('César du meilleur film étranger', 'cesar_best_foreign_film.csv'),
-        ("Ours d'or", 'golden_bear.csv'),
-        ("Lion d'or", 'golden_lion.csv'),
-    ],
-    'characters': [
-        ('Batman', 'batman.csv'),
-        ('Dracula', 'dracula.csv'),
-        ('Frankenstein', 'frankenstein.csv'),
-        ('Godzilla', 'godzilla.csv'),
-        ('King Kong', 'king_kong.csv'),
-        ('Spider-Man', 'spider_man.csv'),
-        ('Superman', 'superman.csv'),
-        ('Tarzan', 'tarzan.csv'),
-    ],
-    'universes': [
-        ('Alien', 'alien.csv'),
-        ('Astérix', 'asterix.csv'),
-        ('Batman Burtonverse', 'batman_burtonverse.csv'),
-        ('Blade', 'blade.csv'),
-        ('Candyman', 'candyman.csv'),
-        ('Cars', 'cars.csv'),
-        ('Chucky', 'chucky.csv'),
-        ('Cloverfield', 'cloverfield.csv'),
-        ('Cycle Antoine Doinel', 'antoine_doinel.csv'),
-        ('DC Animated Movie Universe', 'dcamu.csv'),
-        ('DC Animated Standalone', 'dc_animated_standalone.csv'),
-        ('DC Animated Tomorrowverse', 'dc_animated_tomorrowverse.csv'),
-        ('DC Animated Universe', 'dcau.csv'),
-        ('DC Extended Universe', 'dceu.csv'),
-        ('DC Universe', 'dcu.csv'),
-        ('Destination finale', 'final_destination.csv'),
-        ('Die Hard', 'die_hard.csv'),
-        ('Dragons', 'how_to_train_your_dragon.csv'),
-        ('Eastrail 177', 'eastrail_177.csv'),
-        ('Evil Dead', 'evil_dead.csv'),
-        ('Fast and Furious', 'fast_and_furious.csv'),
-        ('Film adaptations of Disney attractions', 'disney_attractions.csv'),
-        ('Freddy', 'nightmare_on_elm_street.csv'),
-        ('Ghibli', 'ghibli.csv'),
-        ('Godzilla - Heisei era', 'godzilla_heisei.csv'),
-        ('Godzilla - Millennium era', 'godzilla_millennium.csv'),
-        ('Godzilla - Reiwa era', 'godzilla_reiwa.csv'),
-        ('Godzilla - Shōwa era', 'godzilla_showa.csv'),
-        ('Halloween', 'halloween.csv'),
-        ('Hammer Horror', 'hammer_horror.csv'),
-        ('Hellraiser', 'hellraiser.csv'),
-        ('Hunger Games', 'hunger_games.csv'),
-        ('Indiana Jones', 'indiana_jones.csv'),
-        ('James Bond 007', 'james_bond.csv'),
-        ('Jason Bourne', 'bourne.csv'),
-        ('John Wick', 'john_wick.csv'),
-        ('Jurassic Park', 'jurassic_park.csv'),
-        ('Kingsman', 'kingsman.csv'),
-        ('Kung Fu Panda', 'kung_fu_panda.csv'),
-        ("L'Âge de glace", 'ice_age.csv'),
-        ("L'Exorciste", 'exorcist.csv'),
-        ('La Momie', 'the_mummy.csv'),
-        ('La Planète des singes', 'planet_of_the_apes.csv'),
-        ('La Terre du Milieu', 'middle_earth.csv'),
-        ('Le Labyrinthe', 'maze_runner.csv'),
-        ('Les Enquêtes du Département V', 'department_q.csv'),
-        ('Mad Max', 'mad_max.csv'),
-        ('Marvel Cinematic Universe', 'mcu.csv'),
-        ('Massacre à la tronçonneuse', 'texas_chainsaw_massacre.csv'),
-        ('Matrix', 'matrix.csv'),
-        ('Men in Black', 'men_in_black.csv'),
-        ('Millenium', 'millennium.csv'),
-        ('Mission : Impossible', 'mission_impossible.csv'),
-        ('Miyagi-verse', 'miyagiverse.csv'),
-        ('Moi, moche et méchant', 'despicable_me.csv'),
-        ('MonsterVerse', 'monsterverse.csv'),
-        ('Mortal Kombat', 'mortal_kombat.csv'),
-        ("Ocean's", 'oceans.csv'),
-        ('OSS 117', 'oss_117.csv'),
-        ('Pirates des Caraïbes', 'pirates_of_the_caribbean.csv'),
-        ('Pixar', 'pixar.csv'),
-        ('Predator', 'predator.csv'),
-        ('Rambo', 'rambo.csv'),
-        ('Resident Evil', 'resident_evil.csv'),
-        ('Rocky', 'rocky.csv'),
-        ('Romero - Living Dead', 'romero_dead.csv'),
-        ('Scream', 'scream.csv'),
-        ('Shrek', 'shrek.csv'),
-        ("Sony's Spider-Man Universe", 'ssu.csv'),
-        ('SOS Fantômes', 'ghostbusters.csv'),
-        ('Star Trek', 'star_trek.csv'),
-        ('Star Wars', 'star_wars.csv'),
-        ('Superman Cinematic Universe', 'superman_1978.csv'),
-        ('Terminator', 'terminator.csv'),
-        ('The Conjuring Universe', 'conjuring.csv'),
-        ('The Purge', 'the_purge.csv'),
-        ('Toy Story', 'toy_story.csv'),
-        ('Transformers', 'transformers.csv'),
-        ('Trilogie Cornetto', 'cornetto.csv'),
-        ("Trilogie de l'Apocalypse", 'apocalypse_trilogy.csv'),
-        ('Trilogie de la vengeance', 'vengeance.csv'),
-        ('Trilogie du dollar', 'dollars.csv'),
-        ('Trilogie marseillaise', 'marseille.csv'),
-        ('Twilight', 'twilight.csv'),
-        ('Underworld', 'underworld.csv'),
-        ('Universal Monsters - Classic era', 'universal_monsters_classic.csv'),
-        ('Universal Monsters - Modern era', 'universal_monsters_modern.csv'),
-        ('Vendredi 13', 'friday_the_13th.csv'),
-        ('View Askewniverse', 'askewniverse.csv'),
-        ('Walt Disney Animation Studios', 'walt_disney_animation_studios.csv'),
-        ('Wizarding World', 'wizarding_world.csv'),
-        ('X', 'x.csv'),
-        ('X-Men', 'xmen.csv'),
-    ],
-}
+
+def read_tag_index():
+    with open(TAG_INDEX_PATH, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader, None)  # Skip header
+        return [(tag, csv_path) for tag, csv_path in reader]
 
 
 def parse_tag_lists():
-    return {
-        tag: parse_movie_id_csv_into_id_array(TAG_LISTS_DIR / folder / filename)
-        for folder, sources in TAG_SOURCES.items()
-        for tag, filename in sources
-    }
+    return {tag: parse_movie_id_csv_into_id_array(TAG_LISTS_DIR / csv_path) for tag, csv_path in read_tag_index()}

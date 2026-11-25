@@ -19,17 +19,18 @@
 
 import unittest
 
-from movie_nfo_creator.tag_lists import TAG_LISTS_DIR, TAG_SOURCES, parse_tag_lists
+from movie_nfo_creator.tag_lists import TAG_INDEX_PATH, TAG_LISTS_DIR, parse_tag_lists, read_tag_index
 
 
-class TagSourcesTest(unittest.TestCase):
+class TagIndexTest(unittest.TestCase):
 
-    def test_every_csv_is_mapped_to_one_tag(self):
-        for folder, sources in TAG_SOURCES.items():
-            self.assertEqual(sorted(path.name for path in (TAG_LISTS_DIR / folder).glob('*.csv')), sorted(filename for _, filename in sources), folder)
+    def test_every_csv_is_indexed_once(self):
+        csv_paths = sorted(path.relative_to(TAG_LISTS_DIR).as_posix() for path in TAG_LISTS_DIR.rglob('*.csv') if path != TAG_INDEX_PATH)
 
-    def test_tag_names_are_unique_across_folders(self):
-        tags = [tag for sources in TAG_SOURCES.values() for tag, _ in sources]
+        self.assertEqual(csv_paths, sorted(csv_path for _, csv_path in read_tag_index()))
+
+    def test_tag_names_are_unique(self):
+        tags = [tag for tag, _ in read_tag_index()]
 
         self.assertEqual(len(tags), len(set(tags)))
 

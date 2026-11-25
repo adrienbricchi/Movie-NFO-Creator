@@ -27,7 +27,7 @@ from typing import Optional
 
 import requests
 
-AWARDS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'awards'
+AWARDS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists' / 'awards'
 FETCHED_YEARS_PATH = Path(__file__).resolve().parent / 'fetched_years.json'
 WIKIDATA_SPARQL_URL = 'https://query.wikidata.org/sparql'
 USER_AGENT = 'movie-nfo-creator/0.1 (award list refresh)'
