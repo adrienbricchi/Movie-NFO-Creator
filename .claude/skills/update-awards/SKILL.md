@@ -1,11 +1,11 @@
 ---
 name: update-awards
-description: Refresh the award lookup CSVs in movie_nfo_creator/awards/ (Oscars, César, Palme d'Or…) and the cinematic universe CSVs in movie_nfo_creator/universes/ (MCU, DCU, Star Wars…) from Wikidata, review each new film, and write the vetted additions. Use when asked to update, refresh or check the award or universe lists, after a new ceremony or a new universe film.
+description: Refresh the award lookup CSVs in movie_nfo_creator/tag_lists/awards/ (Oscars, César, Palme d'Or…) and the cinematic universe CSVs in movie_nfo_creator/tag_lists/universes/ (MCU, DCU, Star Wars…) from Wikidata, review each new film, and write the vetted additions. Use when asked to update, refresh or check the award or universe lists, after a new ceremony or a new universe film.
 ---
 
 # Update the award lists
 
-The award CSVs in `movie_nfo_creator/awards/` are refreshed from Wikidata by this skill's `scripts/refresh_awards.py`, kept out of the package on purpose.
+The award CSVs in `movie_nfo_creator/tag_lists/awards/` are refreshed from Wikidata by this skill's `scripts/refresh_awards.py`, kept out of the package on purpose.
 The script only appends films missing locally, and never removes a row: Wikidata lacks some older winners and lags on recent ceremonies, so local rows stay authoritative.
 Which CSV maps to which Wikidata award item is `AWARD_SOURCES` at the top of the script; a new CSV in `awards/` needs an entry there too (the script warns about unmapped ones).
 `scripts/fetched_years.json` holds the last ceremony year already covered per CSV: only later ceremonies are suggested, so old years are never refreshed.
@@ -31,14 +31,14 @@ A film's ceremony year comes from Wikidata, or is estimated as its release year 
    ```
    New rows are appended at the end of each CSV, sorted by ceremony year, titled with the Wikidata original title (or French/English label).
    Fix a title by hand if it doesn't match the CSV's existing style; the title column is informational, only the IMDb id is used for tagging.
-6. Check `git diff movie_nfo_creator/awards/`. After changing the script itself, run its tests: `python3 -m unittest discover -s .claude/skills/update-awards/scripts`.
+6. Check `git diff movie_nfo_creator/tag_lists/awards/`. After changing the script itself, run its tests: `python3 -m unittest discover -s .claude/skills/update-awards/scripts`.
 
 ## Adding a new award
 
 Wikidata's award statements are too sparse to build a full history (it had 39 of the 224 César Best Film nominees).
 Seed the CSV from the award's Wikipedia list instead: take each film's article link, resolve it to its Wikidata item (`wbgetentities` with `sites=<lang>wiki&titles=…`),
 read the item's IMDb id (`P345`), and cross-check against Wikidata's own award statements. Watch for ties and links to a non-film article (a play, a novel).
-Then add the tag to `parse_awards()` in `movie_nfo_creator/awards.py`, the source to `AWARD_SOURCES`, and its last seeded ceremony year to `fetched_years.json`.
+The CSV's first line is the tag name, before the `original_title,imdb_id` header; then add the source to `AWARD_SOURCES`, and its last seeded ceremony year to `fetched_years.json`.
 
 ## After a new ceremony
 
@@ -48,21 +48,24 @@ If a winner you know of doesn't show up as a `+` line, add the row to the CSV by
 
 ## Cinematic universes
 
-The universe CSVs in `movie_nfo_creator/universes/` follow the same rules, with `scripts/refresh_universes.py`:
+The universe CSVs in `movie_nfo_creator/tag_lists/universes/` follow the same rules, with `scripts/refresh_universes.py`:
 ```bash
 python3 .claude/skills/update-awards/scripts/refresh_universes.py
 ```
 - `UNIVERSE_SOURCES` maps each CSV to the Wikidata items films link to (series, fictional universe or franchise, directly or through one sub-series).
-  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters, Millenium, the Disney attraction adaptations) are updated by hand,
-  as are the studio lists (Pixar, Ghibli), which films link to as a production company.
+  `closed=True` universes are never refreshed, and those without an item (Godzilla Reiwa, Universal Monsters modern era, Hellraiser, Ghostbusters, Millenium, the Disney attraction adaptations) are updated by hand.
+- The studio lists live in `movie_nfo_creator/tag_lists/studios/`, with `folder='studios'` on their source. Walt Disney Animation Studios is refreshed like a universe,
+  Hammer Horror and the Universal Monsters classic era are closed, and the Universal Monsters modern era is updated by hand.
+  Pixar and Ghibli have no source and are updated by hand too, since films link to them as a production company.
+- The character lists live in `movie_nfo_creator/tag_lists/characters/` and are updated by hand, except Rambo, refreshed like a universe (`folder='characters'`).
 - `scripts/universe_fetched_dates.json` holds a release-date cut-off per CSV: only films released after it, and already out, are suggested.
   `--write` moves it to the newest release added.
 - Announced films that already have an IMDb id are listed ahead of release, so the tag is there as soon as the file is.
   Drop or rename one if it is cancelled or retitled; the refresh never suggests films already in a list.
 - The lists hold theatrical and streaming feature films, plus a few specials asked for by name (the MCU shorts, the Star Wars Holiday Special). Wikidata also links shorts, TV specials, fan films and Lego specials (Star Wars),
   and franchise items lump unrelated reboots together (every Mummy film sits in Q3823300): vet each `+` line the same way, and add false positives to `wikidata_false_positives`.
-- Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, add the tag to `parse_universes()` in
-  `movie_nfo_creator/universes.py`, the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
+- Seeding a new universe works like a new award: list its films from Wikipedia, resolve their IMDb ids through Wikidata, put the tag name on
+  the CSV's first line, add the source to `UNIVERSE_SOURCES` and, if it is refreshed, today's date to `universe_fetched_dates.json`.
 - When IMDb splits a film into its original and a recut (Japanese Godzilla films and their US versions), list both ids, since TMDB may match either.
 
 Don't commit unless the user asks.

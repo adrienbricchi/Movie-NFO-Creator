@@ -22,4 +22,4 @@ build-backend = "setuptools.build_meta"
 packages = ["movie_nfo_creator"]
 
 [tool.setuptools.package-data]
-movie_nfo_creator = ["awards/*.csv", "universes/*.csv"]
+movie_nfo_creator = ["tag_lists/**/*.csv"]

@@ -9,7 +9,7 @@ A Python tool (`movie_nfo_creator` package) that scans a local movie library for
 `movie.nfo` file next to it. It also cross-references a Letterboxd watch-history
 export to mark movies as watched, and tags movies that won/were nominated for
 major awards (Oscars, César, Palme d'Or) using local CSV lookup tables in
-`movie_nfo_creator/awards/`.
+`movie_nfo_creator/tag_lists/awards/`.
 
 This is a personal, interactive CLI utility. A small `unittest` suite lives in `tests/`: `python -m unittest discover -s tests`.
 
@@ -72,10 +72,7 @@ it calls into for each concern:
   of as a module global.
 - `nfo.py` — all `movie.nfo` read/write logic.
 - `letterboxd.py` — parses the Letterboxd watched-history export.
-- `awards.py` / `csv_utils.py` — award CSV lookup tables (bundled package data
-  under `movie_nfo_creator/awards/`, resolved via `Path(__file__).parent`, not
-  cwd-relative) and generic title/imdb_id CSV parsing shared with
-  `watched_override.csv`.
+- `tag_lists.py` — the automatic tag lists (bundled package data under `movie_nfo_creator/tag_lists/`, resolved via `Path(__file__).parent`, not cwd-relative).
 - `mkv.py` — inspection of each `.mkv`'s inner tracks via the MKVToolNix CLI
   (`mkvmerge`/`mkvextract`, must be in `PATH` or `[tracks] mkvtoolnix_dir`).
 - `mkv_cache.py` — 1-day cache (same TTL as `tmdb.py`'s HTTP cache) for
@@ -112,17 +109,19 @@ watched status, the script either patches the NFO in (`add_playcount_to_nfo`)
 or, on a mismatch the other direction, interactively offers to record the
 movie in `watched_override.csv`.
 
-**Awards tagging**: `parse_awards` loads each CSV in `movie_nfo_creator/awards/`
-(one IMDb id per line, keyed to a French-language award-name tag) into a dict of
-award-name → id list. For each movie, missing award tags are appended to the
-NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
+**Automatic tagging**: `parse_tag_lists` (`tag_lists.py`) loads every `movie_nfo_creator/tag_lists/**/*.csv` into a single dict of tag → id list.
+A list CSV starts with its tag name on the first line, then the `original_title,imdb_id` header and one film per line.
+The code knows nothing about what a list is, and adding one is dropping a CSV there, in any subfolder.
+For each movie, missing tags are appended to the NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
-Any other NFO tag that matches no award or universe tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
+Any other NFO tag that matches no automatic tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
 Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_nfo`), and an automatic tag listed there is never added.
 
-**Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…),
-which also hold the studio and theme lists (Pixar, Ghibli, Walt Disney Animation Studios, Disney attraction adaptations);
-both dicts are merged into one tag list in `cli.py`.
+The subfolders only sort the lists:
+- `awards/` — one list per award, keyed to a French-language award-name tag.
+- `studios/` — a studio's films (Pixar, Ghibli, Walt Disney Animation Studios, Hammer Horror, Universal Monsters).
+- `universes/` — cinematic universes (MCU, Star Wars, Godzilla eras…) and theme lists (Disney attraction adaptations).
+- `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand, Rambo excepted.
 
 The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),
 whose scripts and tests live in the skill folder, outside the package.

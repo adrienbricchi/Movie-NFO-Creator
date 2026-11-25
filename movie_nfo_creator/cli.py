@@ -23,7 +23,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
 
-from .awards import parse_awards
 from .config import load_config
 from .letterboxd import letterboxd_id_from_url, parse_letterboxd_csv, resolve_letterboxd_watched
 from .links import FileHeader, folder_uri, with_folder_link
@@ -65,9 +64,9 @@ from .scanner import (
     parse_title_and_year,
 )
 from .rules import RankedRule, RankedRuleRunner, SimpleRule, SimpleRuleRunner
+from .tag_lists import parse_tag_lists
 from .tags import find_tag_mismatches
 from .tmdb import TmdbClient
-from .universes import parse_universes
 from .util import buffered_error_count, flush_buffered_errors, print_error, start_error_buffering
 
 TMDB_FETCH_WORKERS = 8
@@ -285,7 +284,7 @@ def main():
 
     letterboxd_movies = parse_letterboxd_csv(config.letterboxd_watched_file)
     movies_db = load_movies_db(MOVIES_DB_PATH)
-    tag_lists = parse_awards() | parse_universes()
+    tag_lists = parse_tag_lists()
 
     filepaths = []
     for dir_root in config.root_dirs:

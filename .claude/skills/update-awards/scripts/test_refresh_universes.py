@@ -19,7 +19,7 @@
 
 import unittest
 
-from refresh_universes import (FETCHED_DATES_PATH, UNIVERSE_SOURCES, UNIVERSES_DIR, UniverseFilm, UniverseSource, build_query, merge_rows, parse_sparql_response,
+from refresh_universes import (FETCHED_DATES_PATH, TAG_LISTS_DIR, UNIVERSE_SOURCES, UNIVERSES_DIR, UniverseFilm, UniverseSource, build_query, merge_rows, parse_sparql_response,
                                read_fetched_dates)
 from refresh_awards import read_rows, unmapped_csv_files
 
@@ -107,7 +107,7 @@ class UniverseSourcesTest(unittest.TestCase):
 
     def test_every_universe_csv_has_rows(self):
         for source in UNIVERSE_SOURCES:
-            self.assertTrue(read_rows(UNIVERSES_DIR / source.filename), source.filename)
+            self.assertTrue(read_rows(TAG_LISTS_DIR / source.folder / source.filename), source.filename)
 
 
 if __name__ == '__main__':

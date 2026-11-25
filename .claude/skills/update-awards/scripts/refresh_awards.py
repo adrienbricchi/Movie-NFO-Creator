@@ -27,7 +27,7 @@ from typing import Optional
 
 import requests
 
-AWARDS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'awards'
+AWARDS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists' / 'awards'
 FETCHED_YEARS_PATH = Path(__file__).resolve().parent / 'fetched_years.json'
 WIKIDATA_SPARQL_URL = 'https://query.wikidata.org/sparql'
 USER_AGENT = 'movie-nfo-creator/0.1 (award list refresh)'
@@ -176,18 +176,25 @@ def write_fetched_years(path, fetched_years):
 
 def read_rows(csv_path):
     with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+        f.readline()
         reader = csv.reader(f)
         next(reader, None)
         return [(title, imdb_id) for title, imdb_id in reader]
 
 
+def read_tag_line(csv_path):
+    with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+        return f.readline()
+
+
 def write_rows(csv_path, rows):
+    tag_line = read_tag_line(csv_path)
     buffer = io.StringIO()
     writer = csv.writer(buffer, lineterminator='\n')
     writer.writerow(CSV_HEADER)
     writer.writerows(rows)
     with open(csv_path, 'w', encoding='utf-8', newline='') as f:
-        f.write(buffer.getvalue().rstrip('\n'))
+        f.write(tag_line + buffer.getvalue().rstrip('\n'))
 
 
 def unmapped_csv_files(awards_dir, sources):

@@ -28,7 +28,8 @@ import requests
 
 from refresh_awards import IMDB_URL, USER_AGENT, WIKIDATA_SPARQL_URL, read_rows, unmapped_csv_files, write_rows
 
-UNIVERSES_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'universes'
+TAG_LISTS_DIR = Path(__file__).resolve().parents[4] / 'movie_nfo_creator' / 'tag_lists'
+UNIVERSES_DIR = TAG_LISTS_DIR / 'universes'
 FETCHED_DATES_PATH = Path(__file__).resolve().parent / 'universe_fetched_dates.json'
 
 QUERY_TEMPLATE = '''
@@ -54,6 +55,7 @@ class UniverseSource:
     wikidata_items: tuple = ()
     closed: bool = False
     wikidata_false_positives: tuple = ()
+    folder: str = 'universes'
 
 
 UNIVERSE_SOURCES = [
@@ -69,6 +71,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('cars.csv', ('Q5046850', 'Q62846448', 'Q58510929', 'Q123699295')),
     UniverseSource('chucky.csv', ('Q2265493',)),
     UniverseSource('cloverfield.csv', ('Q25136301',)),
+    UniverseSource('conan.csv'),
     UniverseSource('conjuring.csv', ('Q25339704',)),
     UniverseSource('cornetto.csv', closed=True),
     UniverseSource('dc_animated_standalone.csv', ('Q2405799',)),
@@ -81,6 +84,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('despicable_me.csv', ('Q5264979', 'Q98114628', 'Q140478058')),
     UniverseSource('die_hard.csv', ('Q2716420',)),
     UniverseSource('disney_attractions.csv'),
+    UniverseSource('disney_live_action.csv'),
     UniverseSource('dollars.csv', closed=True),
     UniverseSource('eastrail_177.csv', closed=True),
     UniverseSource('evil_dead.csv', ('Q921605',)),
@@ -89,13 +93,12 @@ UNIVERSE_SOURCES = [
     UniverseSource('final_destination.csv', ('Q223261',)),
     UniverseSource('friday_the_13th.csv', ('Q1138878',)),
     UniverseSource('ghostbusters.csv'),
-    UniverseSource('ghibli.csv'),
     UniverseSource('godzilla_heisei.csv', closed=True),
     UniverseSource('godzilla_millennium.csv', closed=True),
     UniverseSource('godzilla_reiwa.csv'),
     UniverseSource('godzilla_showa.csv', closed=True),
     UniverseSource('halloween.csv', ('Q1364022',)),
-    UniverseSource('hammer_horror.csv', closed=True),
+    UniverseSource('hammer_horror.csv', closed=True, folder='studios'),
     UniverseSource('hellraiser.csv'),
     UniverseSource('how_to_train_your_dragon.csv', ('Q98120630', 'Q136714118', 'Q3715071')),
     UniverseSource('hunger_games.csv', ('Q11885031',)),
@@ -122,10 +125,9 @@ UNIVERSE_SOURCES = [
     UniverseSource('oceans.csv', ('Q4463076',)),
     UniverseSource('oss_117.csv', ('Q2008180',)),
     UniverseSource('pirates_of_the_caribbean.csv', ('Q194318',)),
-    UniverseSource('pixar.csv'),
     UniverseSource('planet_of_the_apes.csv', ('Q731663',)),
     UniverseSource('predator.csv', ('Q2138108', 'Q2967318')),
-    UniverseSource('rambo.csv', ('Q1621266',)),
+    UniverseSource('rambo.csv', ('Q1621266',), folder='characters'),
     UniverseSource('resident_evil.csv', ('Q1276325',)),
     UniverseSource('rocky.csv', ('Q1078084',)),
     UniverseSource('romero_dead.csv', ('Q2652860',)),
@@ -143,10 +145,10 @@ UNIVERSE_SOURCES = [
     UniverseSource('transformers.csv', ('Q2073466',)),
     UniverseSource('twilight.csv', closed=True),
     UniverseSource('underworld.csv', ('Q82332',)),
-    UniverseSource('universal_monsters_classic.csv', closed=True),
-    UniverseSource('universal_monsters_modern.csv'),
+    UniverseSource('universal_monsters_classic.csv', closed=True, folder='studios'),
+    UniverseSource('universal_monsters_modern.csv', folder='studios'),
     UniverseSource('vengeance.csv', closed=True),
-    UniverseSource('walt_disney_animation_studios.csv', ('Q56070713',)),
+    UniverseSource('walt_disney_animation_studios.csv', ('Q56070713',), folder='studios'),
     UniverseSource('wizarding_world.csv', ('Q216930', 'Q27922181', 'Q30739117')),
     UniverseSource('x.csv', ('Q114451788',)),
     UniverseSource('xmen.csv', ('Q2006869',), closed=True),
@@ -255,7 +257,7 @@ def main(argv=None, today=None):
             print(f"{source.filename}: no Wikidata item, update by hand")
             continue
 
-        csv_path = UNIVERSES_DIR / source.filename
+        csv_path = TAG_LISTS_DIR / source.folder / source.filename
         fetched_until = fetched_dates.get(source.filename, '0000-00-00')
         result = merge_rows(read_rows(csv_path), fetch_wikidata_films(source), fetched_until, today, source.wikidata_false_positives)
         total_added += len(result.added)
