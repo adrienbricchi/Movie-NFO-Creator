@@ -118,7 +118,8 @@ NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
 Any other NFO tag that matches no award or universe tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
 
-**Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…);
+**Universe tagging**: `parse_universes` does the same for the cinematic universe CSVs in `movie_nfo_creator/universes/` (MCU, Star Wars, Godzilla eras…),
+which also hold the studio and theme lists (Pixar, Ghibli, Walt Disney Animation Studios, Disney attraction adaptations);
 both dicts are merged into one tag list in `cli.py`.
 
 The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),

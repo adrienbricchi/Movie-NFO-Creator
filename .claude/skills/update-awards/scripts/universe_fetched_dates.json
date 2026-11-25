@@ -11,6 +11,7 @@
   "conjuring.csv": "2026-11-24",
   "dc_animated_standalone.csv": "2026-11-24",
   "dcu.csv": "2026-11-24",
+  "department_q.csv": "2026-11-25",
   "despicable_me.csv": "2026-11-24",
   "die_hard.csv": "2026-11-24",
   "evil_dead.csv": "2026-11-24",
@@ -39,6 +40,7 @@
   "monsterverse.csv": "2026-11-24",
   "mortal_kombat.csv": "2026-11-24",
   "nightmare_on_elm_street.csv": "2026-11-24",
+  "oceans.csv": "2026-11-25",
   "oss_117.csv": "2026-11-24",
   "pirates_of_the_caribbean.csv": "2026-11-24",
   "planet_of_the_apes.csv": "2026-11-24",
@@ -58,5 +60,7 @@
   "toy_story.csv": "2026-11-24",
   "transformers.csv": "2026-11-24",
   "underworld.csv": "2026-11-24",
-  "wizarding_world.csv": "2026-11-24"
+  "walt_disney_animation_studios.csv": "2026-11-25",
+  "wizarding_world.csv": "2026-11-24",
+  "x.csv": "2026-11-25"
 }
