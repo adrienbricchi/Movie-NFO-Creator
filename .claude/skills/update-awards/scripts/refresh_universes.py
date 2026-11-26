@@ -66,6 +66,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('askewniverse.csv', ('Q1140919',)),
     UniverseSource('asterix.csv', ('Q2868647', 'Q97010658')),
     UniverseSource('batman_burtonverse.csv', closed=True),
+    UniverseSource('biopic_musical.csv'),
     UniverseSource('blade.csv', ('Q4923681',)),
     UniverseSource('blade_runner.csv', ('Q48724847',)),
     UniverseSource('bourne.csv', ('Q868683',)),
