@@ -179,7 +179,7 @@ def read_rows(csv_path):
         f.readline()
         reader = csv.reader(f)
         next(reader, None)
-        return [(title, imdb_id) for title, imdb_id in reader]
+        return [(title, imdb_id) for title, imdb_id, *_ in reader]
 
 
 def read_tag_line(csv_path):

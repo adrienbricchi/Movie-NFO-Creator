@@ -28,7 +28,7 @@ def read_tag_list(csv_path):
         tag = f.readline().strip()
         reader = csv.reader(f)
         next(reader, None)  # Skip header
-        return tag, [imdb_id for _, imdb_id in reader]
+        return tag, [movie_id for _, *movie_ids in reader for movie_id in movie_ids if movie_id]
 
 
 def parse_tag_lists():

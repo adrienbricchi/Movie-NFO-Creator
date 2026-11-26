@@ -23,7 +23,15 @@ import xml.etree.ElementTree as ET
 from .util import print_error
 
 
-def parse_movie_nfo_imdb(filepath):
+IMDB_URL = 'https://www.imdb.com/title/'
+TMDB_URL = 'https://www.themoviedb.org/movie/'
+
+
+def movie_url(movie_id):
+    return (IMDB_URL if movie_id.startswith('tt') else TMDB_URL) + movie_id
+
+
+def parse_movie_nfo_id(filepath):
     try:
         with open(filepath, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -42,13 +50,14 @@ def parse_movie_nfo_imdb(filepath):
     if re.match(r'^https?://(www\.)?imdb\.com/title/tt\d+/?$', last_line):
         print_error(f"Last line is a poor IMDb URL: {last_line}")
         return None
-    if re.match(r'^https://www\.themoviedb\.org/movie/', last_line):
-        return None
-    print_error(f"Last line is not a valid IMDb URL: {last_line}")
+    match = re.match(r'^https://www\.themoviedb\.org/movie/(\d+)', last_line)
+    if match:
+        return match.group(1)
+    print_error(f"Last line is not a valid IMDb or TMDb URL: {last_line}")
     return None
 
 
-def prompt_create_movie_nfo(filepath, imdb_url, tmdb_movie, watched, tmdb_client):
+def prompt_create_movie_nfo(filepath, movie_id, tmdb_movie, watched, tmdb_client):
 
     credits = tmdb_client.get_movie_credits(tmdb_movie['id'])
     cast_list = [c['name'] for c in credits.get('cast', [])[:5]]
@@ -62,12 +71,12 @@ def prompt_create_movie_nfo(filepath, imdb_url, tmdb_movie, watched, tmdb_client
 
     answer = input(f"Do you want to create this NFO? [Y/n] ").strip().lower()
     if answer in ('', 'y', 'yes'):
-        create_movie_nfo(filepath, imdb_url, tmdb_movie, watched)
+        create_movie_nfo(filepath, movie_id, tmdb_movie, watched)
     else:
         print("NFO creation skipped.")
 
 
-def create_movie_nfo(filepath, imdb_id, tmdb_movie, watched):
+def create_movie_nfo(filepath, movie_id, tmdb_movie, watched):
     title = tmdb_movie.get("title")
     title = title.replace('&', '&amp;')
     title = title.replace('’', "'")
@@ -79,7 +88,7 @@ def create_movie_nfo(filepath, imdb_id, tmdb_movie, watched):
             if watched:
                 f.write('  <playcount>1</playcount>\n')
             f.write('</movie>\n')
-            f.write("https://www.imdb.com/title/" + imdb_id)
+            f.write(movie_url(movie_id))
         print(f"NFO file created at {filepath}")
     except Exception as e:
         print_error(f"Error writing NFO file {filepath}: {e}")

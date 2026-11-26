@@ -50,6 +50,15 @@ class FindTagMismatchesTest(unittest.TestCase):
         self.assertEqual([], mismatches.irrelevant)
         self.assertEqual(['Univers cinématographique Marvel'], mismatches.unknown)
 
+    def test_tmdb_id_matches_a_list_as_well_as_the_imdb_id(self):
+        tag_lists = {'Les Guignols de l\'info': ['tt0000004', '396840']}
+
+        by_tmdb_id = find_tag_mismatches([], {'396840'}, tag_lists)
+        by_either_id = find_tag_mismatches(['Les Guignols de l\'info'], {'tt0000009', '396840'}, tag_lists)
+
+        self.assertEqual(['Les Guignols de l\'info'], by_tmdb_id.missing)
+        self.assertEqual(([], []), (by_either_id.missing, by_either_id.irrelevant))
+
     def test_no_tags_in_nfo(self):
         mismatches = find_tag_mismatches(None, 'tt0000009', TAG_LISTS)
 

@@ -76,10 +76,6 @@ class TmdbClient:
             print_error(str(movie) + " not found on TMDB")
             return None
 
-        if not tmdb_movie.get("imdb_id"):
-            print_error(str(movie) + " IMDB id not found on TMDB")
-            return None
-
         return tmdb_movie
 
     def search_movie(self, title, year=None):
