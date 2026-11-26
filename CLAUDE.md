@@ -88,7 +88,7 @@ filename (expected pattern: `Title (..., YYYY, ...).mkv`), and the sibling
 **NFO format**: An NFO file is *not* well-formed XML on its own — it's an XML
 `<movie>` block followed by a trailing plain-text IMDb URL line
 (`https://www.imdb.com/title/ttXXXXXXX`). Every reader/writer in `nfo.py`
-(`parse_movie_nfo_xml`, `parse_movie_nfo_imdb`, `add_tag_to_movie_nfo`,
+(`parse_movie_nfo_xml`, `parse_movie_nfo_id`, `add_tag_to_movie_nfo`,
 `add_playcount_to_nfo`) has to split off that last line before parsing the XML
 and re-append it after serializing. Keep this in mind when touching any NFO
 read/write code — a naive `ET.parse()` on the raw file will fail.
@@ -111,16 +111,18 @@ movie in `watched_override.csv`.
 
 **Automatic tagging**: `parse_tag_lists` (`tag_lists.py`) loads every `movie_nfo_creator/tag_lists/**/*.csv` into a single dict of tag → id list.
 A list CSV starts with its tag name on the first line, then the `original_title,imdb_id` header and one film per line.
+A list may add an optional third `tmdb_id` column, for the films IMDb doesn't know (the yearly Guignols best-ofs): a film matches a list on either id.
+Such a film's NFO ends with its `https://www.themoviedb.org/movie/<id>` link instead of the IMDb one, and it is keyed by its TMDb id everywhere an IMDb id is expected.
 The code knows nothing about what a list is, and adding one is dropping a CSV there, in any subfolder.
 For each movie, missing tags are appended to the NFO (`add_tag_to_movie_nfo`) and tags present in the NFO that no longer match
 the movie's IMDb id are flagged as errors (not auto-removed).
-Any other NFO tag that matches no automatic tag is reported as an unknown tag (`find_tag_mismatches` in `tags.py`).
+Any other NFO tag that matches no automatic tag is an unknown tag (`find_tag_mismatches` in `tags.py`), counted per tag in the final summary.
 Tags listed in `[tags] remove` are pruned from the NFO (`remove_tag_from_movie_nfo`), and an automatic tag listed there is never added.
 
 The subfolders only sort the lists:
 - `awards/` — one list per award, keyed to a French-language award-name tag.
 - `studios/` — a studio's films (Pixar, Ghibli, Walt Disney Animation Studios, Hammer Horror, Universal Monsters).
-- `universes/` — cinematic universes (MCU, Star Wars, Toho Kaiju eras…) and theme lists (Disney attraction adaptations).
+- `universes/` — cinematic universes (MCU, Star Wars, Toho Kaiju eras…) and theme lists (Disney attraction adaptations, musical biopics).
 - `characters/` — the films a character appears in, whatever the saga (Batman, Dracula, Godzilla…), updated by hand, Rambo excepted.
 
 The award and universe CSVs are refreshed from Wikidata by the `update-awards` project skill (`.claude/skills/update-awards/`),

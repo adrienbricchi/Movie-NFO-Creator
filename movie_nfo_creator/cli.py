@@ -19,6 +19,7 @@
 
 import argparse
 import os
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from tqdm import tqdm
@@ -49,7 +50,7 @@ from .nfo import (
     add_tag_to_movie_nfo,
     get_movie_element,
     get_movie_elements,
-    parse_movie_nfo_imdb,
+    parse_movie_nfo_id,
     parse_movie_nfo_xml,
     remove_tag_from_movie_nfo,
     prompt_create_movie_nfo,
@@ -128,8 +129,13 @@ REENCODE_RULE = RankedRule(
 )
 
 
-def fetch_tmdb_movie(tmdb_client, movie, imdb_id):
-    return tmdb_client.get_movie_by_imdb_id(imdb_id) if imdb_id else tmdb_client.find_movie(movie)
+def fetch_tmdb_movie(tmdb_client, movie, movie_id):
+    if not movie_id:
+        return tmdb_client.find_movie(movie)
+    if movie_id.startswith('tt'):
+        return tmdb_client.get_movie_by_imdb_id(movie_id)
+    tmdb_movie = tmdb_client.get_movie_by_id(movie_id)
+    return tmdb_movie if tmdb_movie.get('id') else None
 
 
 def ensure_mediainfo(filepath, mkv_info, config):
@@ -202,7 +208,8 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
     if tmdb_movie is None:
         return result
 
-    imdb_id = tmdb_movie.get('imdb_id')
+    tmdb_id = str(tmdb_movie['id'])
+    imdb_id = tmdb_movie.get('imdb_id') or tmdb_id
     tmdb_title = tmdb_movie.get('title')
     tmdb_original_title = tmdb_movie.get('original_title')
     tmdb_release_date = tmdb_movie.get('release_date')
@@ -249,7 +256,7 @@ def analyze_movie(entry, tmdb_movie, nfo_root, movies_db, letterboxd_movies, tag
     nfo_watch_count = get_movie_element(nfo_root, "playcount")
     result['nfo_watched'] = nfo_watch_count is not None
 
-    tag_mismatches = find_tag_mismatches(get_movie_elements(nfo_root, "tag"), imdb_id, tag_lists, config.tags_to_remove)
+    tag_mismatches = find_tag_mismatches(get_movie_elements(nfo_root, "tag"), {imdb_id, tmdb_id}, tag_lists, config.tags_to_remove)
     result['missing_tags'] = tag_mismatches.missing
     result['irrelevant_tags'] = tag_mismatches.irrelevant
     result['unknown_tags'] = tag_mismatches.unknown
@@ -300,7 +307,7 @@ def main():
             continue
         folder_name = os.path.dirname(filepath)
         movie_nfo_path = os.path.join(folder_name, 'movie.nfo')
-        imdb_id = parse_movie_nfo_imdb(movie_nfo_path)
+        imdb_id = parse_movie_nfo_id(movie_nfo_path)
         entries.append((filepath, movie, movie_nfo_path, imdb_id))
 
     print("\n=== Step 2/5: Fetching TMDb data ===")
@@ -356,6 +363,7 @@ def main():
     simple_rules_runner = SimpleRuleRunner(SIMPLE_RULES)
     reencode_runner = RankedRuleRunner(REENCODE_RULE)
     movie_locations = {}
+    unknown_tag_counts = Counter()
     for (filepath, movie, movie_nfo_path, _), tmdb_movie, nfo_root, analysis in zip(entries, tmdb_movies, nfo_roots, analyses):
         header = FileHeader(filepath)
 
@@ -439,9 +447,7 @@ def main():
             header.print()
             print_error("    irrelevant tag: " + irrelevant_tag)
 
-        for unknown_tag in analysis['unknown_tags']:
-            header.print()
-            print_error("    unknown tag: " + unknown_tag)
+        unknown_tag_counts.update(analysis['unknown_tags'])
 
     duplicate_groups = {
         imdb_id: sorted(set(folders)) for imdb_id, folders in movie_locations.items() if len(set(folders)) > 1
@@ -449,7 +455,7 @@ def main():
 
     any_issues = (
         title_diff_count or missing_nfo_count or tmdb_unmatched_count
-        or simple_rules_runner.any_issues() or reencode_runner.any_issues() or duplicate_groups
+        or simple_rules_runner.any_issues() or reencode_runner.any_issues() or duplicate_groups or unknown_tag_counts
     )
     if any_issues:
         print("\n=== Summary ===")
@@ -469,3 +475,7 @@ def main():
                 print(f"    {imdb_id}:")
                 for folder in folders:
                     print(f"        {folder}  {folder_uri(folder)}")
+        if unknown_tag_counts:
+            print("Unknown tags: " + str(len(unknown_tag_counts)))
+            for unknown_tag, movie_count in unknown_tag_counts.most_common():
+                print(f"    {unknown_tag}: {movie_count}")
