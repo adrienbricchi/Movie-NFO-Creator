@@ -100,7 +100,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('godzilla_millennium.csv', closed=True),
     UniverseSource('godzilla_reiwa.csv'),
     UniverseSource('godzilla_showa.csv', closed=True),
-    UniverseSource('guignols.csv'),
+    UniverseSource('guignols.csv', closed=True),
     UniverseSource('halloween.csv', ('Q1364022',)),
     UniverseSource('hammer_horror.csv', closed=True, folder='studios'),
     UniverseSource('hellraiser.csv'),
