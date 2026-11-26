@@ -140,6 +140,7 @@ UNIVERSE_SOURCES = [
     UniverseSource('scream.csv', ('Q388659',)),
     UniverseSource('shrek.csv', ('Q61946928', 'Q1203222')),
     UniverseSource('ssu.csv', ('Q55537283',), closed=True),
+    UniverseSource('stand_up.csv'),
     UniverseSource('star_trek.csv', ('Q1102217',)),
     UniverseSource('star_wars.csv', ('Q462', 'Q22092344')),
     UniverseSource('superman_1978.csv', closed=True),
